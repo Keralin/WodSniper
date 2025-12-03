@@ -87,6 +87,7 @@ def connect_wodbuster():
             # Save credentials and session
             current_user.box_url = box_url
             current_user.wodbuster_email = email
+            current_user.set_wodbuster_password(password)  # Save encrypted password for auto re-login
             current_user.set_wodbuster_cookies(client.get_cookies())
 
             db.session.commit()

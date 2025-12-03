@@ -121,7 +121,7 @@ def _process_single_booking(booking, app):
     from app.models import db, BookingLog
     from app.scraper import (
         WodBusterClient, SessionExpiredError, ClassNotFoundError,
-        ClassFullError, BookingError, RateLimitError
+        ClassFullError, BookingError, RateLimitError, LoginError
     )
 
     user = booking.user
@@ -132,9 +132,30 @@ def _process_single_booking(booking, app):
     try:
         client = WodBusterClient(user.box_url)
         cookies = user.get_wodbuster_cookies()
+        session_valid = False
 
-        if not cookies or not client.restore_session(cookies):
-            raise SessionExpiredError('Session expired')
+        # Try to restore session with existing cookies
+        if cookies:
+            session_valid = client.restore_session(cookies)
+
+        # If session expired, try re-login with stored credentials
+        if not session_valid:
+            logger.info(f'Session expired for {user.email}, attempting re-login...')
+            wodbuster_password = user.get_wodbuster_password()
+
+            if wodbuster_password and user.wodbuster_email:
+                try:
+                    client.login(user.wodbuster_email, wodbuster_password)
+                    # Save new cookies for future use
+                    user.set_wodbuster_cookies(client.get_cookies())
+                    db.session.commit()
+                    logger.info(f'Re-login successful for {user.email}')
+                    session_valid = True
+                except LoginError as e:
+                    logger.error(f'Re-login failed for {user.email}: {e}')
+                    raise SessionExpiredError(f'Session expired and re-login failed: {e}')
+            else:
+                raise SessionExpiredError('Session expired and no credentials stored for re-login')
 
         # Calculate target date
         today = datetime.now()

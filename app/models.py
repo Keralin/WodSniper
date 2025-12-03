@@ -18,6 +18,7 @@ class User(UserMixin, db.Model):
     # WodBuster connection
     box_url = db.Column(db.String(256), nullable=True)  # e.g., https://teknix.wodbuster.com
     wodbuster_email = db.Column(db.String(120), nullable=True)
+    wodbuster_password_encrypted = db.Column(db.String(512), nullable=True)  # Encrypted password
     wodbuster_cookie = db.Column(db.LargeBinary, nullable=True)  # Pickled session cookies
 
     # Notification preferences
@@ -45,6 +46,16 @@ class User(UserMixin, db.Model):
         if self.wodbuster_cookie:
             return pickle.loads(self.wodbuster_cookie)
         return None
+
+    def set_wodbuster_password(self, password):
+        """Store WodBuster password (encrypted)."""
+        from app.crypto import encrypt_credential
+        self.wodbuster_password_encrypted = encrypt_credential(password)
+
+    def get_wodbuster_password(self):
+        """Retrieve WodBuster password (decrypted)."""
+        from app.crypto import decrypt_credential
+        return decrypt_credential(self.wodbuster_password_encrypted)
 
     @property
     def box_name(self):
