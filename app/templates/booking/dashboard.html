@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - WodSniper{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>Dashboard</h1>
+        <div class="header-actions">
+            <a href="{{ url_for('booking.my_reservations') }}" class="btn btn-outline">My Reservations</a>
+            <a href="{{ url_for('booking.new_booking') }}" class="btn btn-primary">+ New Booking</a>
+        </div>
+    </div>
+
+    {% if not wodbuster_connected %}
+    <div class="alert alert-warning">
+        <strong>WodBuster not connected.</strong>
+        <a href="{{ url_for('auth.connect_wodbuster') }}">Connect your account</a> to start booking automatically.
+    </div>
+    {% endif %}
+
+    {% if account_info and account_info.available_classes is not none %}
+        {% if account_info.available_classes == 0 %}
+        <div class="alert alert-danger">
+            <strong>No classes available!</strong>
+            You have 0 credits left. Automatic bookings will fail until you renew your subscription.
+        </div>
+        {% elif account_info.available_classes <= 2 %}
+        <div class="alert alert-warning">
+            <strong>Low credits!</strong>
+            You only have {{ account_info.available_classes }} class(es) left. Consider renewing soon.
+        </div>
+        {% endif %}
+    {% endif %}
+
+    <div class="card">
+        <h2>Scheduled Bookings</h2>
+
+        {% if bookings %}
+        <div class="bookings-table-wrapper">
+            <table class="bookings-table">
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th>Time</th>
+                        <th>Class</th>
+                        <th>Status</th>
+                        <th>Last Booking</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings %}
+                    <tr class="{% if not booking.is_active %}inactive{% endif %}">
+                        <td>
+                            <span class="day-badge day-{{ booking.day_of_week }}">
+                                {{ booking.day_name }}
+                            </span>
+                        </td>
+                        <td>{{ booking.time }}</td>
+                        <td>{{ booking.class_type }}</td>
+                        <td>
+                            <span class="status-badge status-{{ booking.status }}">
+                                {% if booking.status == 'pending' %}Pending
+                                {% elif booking.status == 'success' %}Booked
+                                {% elif booking.status == 'failed' %}Failed
+                                {% elif booking.status == 'waiting' %}Waiting
+                                {% else %}{{ booking.status }}
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            {% if booking.last_attempt %}
+                                {{ booking.last_attempt.strftime('%d/%m %H:%M') }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="actions">
+                            <form method="POST" action="{{ url_for('booking.book_now', booking_id=booking.id) }}" class="inline-form">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-primary" title="Book now">
+                                    Book
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('booking.toggle_booking', booking_id=booking.id) }}" class="inline-form">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline" title="{% if booking.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                    {% if booking.is_active %}Deactivate{% else %}Activate{% endif %}
+                                </button>
+                            </form>
+                            <a href="{{ url_for('booking.booking_logs', booking_id=booking.id) }}" class="btn btn-sm btn-outline" title="View history">
+                                History
+                            </a>
+                            <form method="POST" action="{{ url_for('booking.delete_booking', booking_id=booking.id) }}" class="inline-form" onsubmit="return confirm('Delete this scheduled booking?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                    Delete
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>You don't have any scheduled bookings.</p>
+            <a href="{{ url_for('booking.new_booking') }}" class="btn btn-primary">Create your first booking</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>Information</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">Connected Box</span>
+                <span class="info-value">{{ current_user.box_name or 'Not connected' }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">WodBuster Email</span>
+                <span class="info-value">{{ current_user.wodbuster_email or '-' }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Active Bookings</span>
+                <span class="info-value">{{ bookings|selectattr('is_active')|list|length }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Available Credits</span>
+                <span class="info-value {% if account_info and account_info.available_classes is not none and account_info.available_classes <= 2 %}text-warning{% endif %}{% if account_info and account_info.available_classes == 0 %} text-danger{% endif %}">
+                    {% if account_info and account_info.available_classes is not none %}
+                        {{ account_info.available_classes }}
+                    {% elif wodbuster_connected %}
+                        -
+                    {% else %}
+                        Not connected
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Notifications</h2>
+        <div class="notification-settings">
+            <form method="POST" action="{{ url_for('booking.toggle_notifications') }}" class="notification-toggle-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label class="toggle-switch">
+                    <input type="checkbox" name="email_notifications"
+                           {% if current_user.email_notifications %}checked{% endif %}
+                           onchange="this.form.submit()">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">
+                    Email notifications
+                    <small>Receive a summary after automatic bookings</small>
+                </span>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

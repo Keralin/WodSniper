@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}My Reservations - WodSniper{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>My Reservations</h1>
+        <a href="{{ url_for('booking.dashboard') }}" class="btn btn-outline">Back to Dashboard</a>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger">
+        <strong>Error:</strong> {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <h2>Upcoming Classes (Next 7 days)</h2>
+
+        {% if reservations %}
+        <div class="bookings-table-wrapper">
+            <table class="bookings-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Class</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for res in reservations %}
+                    <tr>
+                        <td>
+                            <span class="day-badge">
+                                {{ res.date }}
+                            </span>
+                        </td>
+                        <td>{{ res.time }}</td>
+                        <td>{{ res.name }}</td>
+                        <td>
+                            <span class="status-badge status-success">
+                                {{ res.status }}
+                            </span>
+                        </td>
+                        <td class="actions">
+                            {% if res.can_cancel and res.booking_id %}
+                            <form method="POST" action="{{ url_for('booking.cancel_reservation', class_id=res.id, booking_id=res.booking_id) }}" class="inline-form" onsubmit="return confirm('Cancel this reservation on WodBuster?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Cancel reservation">
+                                    Cancel
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No upcoming reservations found.</p>
+            <p class="text-muted">Book a class from the dashboard or directly on WodBuster.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>Information</h2>
+        <p class="text-muted">
+            This page shows your upcoming reservations on WodBuster for the next 7 days.
+            You can cancel reservations directly from here.
+        </p>
+    </div>
+</div>
+{% endblock %}

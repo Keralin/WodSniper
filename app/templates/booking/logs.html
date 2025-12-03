@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Booking History - WodSniper{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>Booking History</h1>
+        <a href="{{ url_for('booking.dashboard') }}" class="btn btn-outline">Back</a>
+    </div>
+
+    <div class="card">
+        <h2>{{ booking.day_name }} {{ booking.time }} - {{ booking.class_type }}</h2>
+
+        <div class="booking-stats">
+            <div class="stat">
+                <span class="stat-value">{{ booking.success_count }}</span>
+                <span class="stat-label">Successful</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value">{{ booking.fail_count }}</span>
+                <span class="stat-label">Failed</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value {% if booking.is_active %}active{% else %}inactive{% endif %}">
+                    {% if booking.is_active %}Active{% else %}Inactive{% endif %}
+                </span>
+                <span class="stat-label">Status</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Recent Attempts</h2>
+
+        {% if logs %}
+        <div class="logs-list">
+            {% for log in logs %}
+            <div class="log-item log-{{ log.status }}">
+                <div class="log-header">
+                    <span class="status-badge status-{{ log.status }}">
+                        {% if log.status == 'success' %}Successful
+                        {% elif log.status == 'failed' %}Failed
+                        {% elif log.status == 'waiting' %}Waiting
+                        {% else %}{{ log.status }}
+                        {% endif %}
+                    </span>
+                    <span class="log-date">{{ log.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                </div>
+                {% if log.message %}
+                <p class="log-message">{{ log.message }}</p>
+                {% endif %}
+                {% if log.target_date %}
+                <p class="log-target">Target date: {{ log.target_date.strftime('%d/%m/%Y') }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No attempts recorded yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

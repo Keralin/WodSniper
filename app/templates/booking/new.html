@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}New Booking - WodSniper{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h2>New Scheduled Booking</h2>
+        <p class="auth-description">
+            Set up an automatic booking. WodSniper will attempt to book this class every week.
+        </p>
+
+        <form method="POST" class="form" id="booking-form">
+            {{ form.hidden_tag() }}
+
+            <div class="form-group">
+                {{ form.day_of_week.label }}
+                <select name="day_of_week" id="day_of_week" class="form-control" required>
+                    <option value="">-- Select day --</option>
+                    <option value="0">Monday</option>
+                    <option value="1">Tuesday</option>
+                    <option value="2">Wednesday</option>
+                    <option value="3">Thursday</option>
+                    <option value="4">Friday</option>
+                    <option value="5">Saturday</option>
+                    <option value="6">Sunday</option>
+                </select>
+                {% for error in form.day_of_week.errors %}
+                    <span class="form-error">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label for="time">Time</label>
+                <select name="time" id="time" class="form-control" required disabled>
+                    <option value="">-- Select day first --</option>
+                </select>
+                <span class="form-hint" id="time-hint">Select a day to load available times</span>
+                {% for error in form.time.errors %}
+                    <span class="form-error">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label for="class_type">Class Type</label>
+                <select name="class_type" id="class_type" class="form-control" required disabled>
+                    <option value="">-- Select time first --</option>
+                </select>
+                <span class="form-hint" id="class-hint">Select a time to load available classes</span>
+                {% for error in form.class_type.errors %}
+                    <span class="form-error">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary btn-block" id="submit-btn" disabled>
+                    Schedule Booking
+                </button>
+            </div>
+        </form>
+
+        <p class="auth-footer">
+            <a href="{{ url_for('booking.dashboard') }}">Back to Dashboard</a>
+        </p>
+    </div>
+</div>
+
+<script>
+(function() {
+    const daySelect = document.getElementById('day_of_week');
+    const timeSelect = document.getElementById('time');
+    const classSelect = document.getElementById('class_type');
+    const submitBtn = document.getElementById('submit-btn');
+    const timeHint = document.getElementById('time-hint');
+    const classHint = document.getElementById('class-hint');
+
+    let classData = {}; // Store classes by time
+
+    daySelect.addEventListener('change', function() {
+        const day = this.value;
+
+        // Reset downstream selects
+        timeSelect.innerHTML = '<option value="">Loading...</option>';
+        timeSelect.disabled = true;
+        classSelect.innerHTML = '<option value="">-- Select time first --</option>';
+        classSelect.disabled = true;
+        submitBtn.disabled = true;
+        classData = {};
+
+        if (!day) {
+            timeSelect.innerHTML = '<option value="">-- Select day first --</option>';
+            timeHint.textContent = 'Select a day to load available times';
+            return;
+        }
+
+        // Fetch classes for this day
+        fetch('/api/classes-by-day/' + day)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    timeSelect.innerHTML = '<option value="">Error: ' + data.error + '</option>';
+                    timeHint.textContent = 'Error loading classes';
+                    return;
+                }
+
+                if (!data.slots || data.slots.length === 0) {
+                    timeSelect.innerHTML = '<option value="">No classes available</option>';
+                    timeHint.textContent = 'No classes found for this day';
+                    return;
+                }
+
+                // Store class data and populate time dropdown
+                timeSelect.innerHTML = '<option value="">-- Select time --</option>';
+                data.slots.forEach(slot => {
+                    classData[slot.time] = slot.classes;
+                    const option = document.createElement('option');
+                    option.value = slot.time;
+                    option.textContent = slot.time + ' (' + slot.classes.length + ' classes)';
+                    timeSelect.appendChild(option);
+                });
+
+                timeSelect.disabled = false;
+
+                // Show reference note if using last week's schedule
+                if (data.is_reference) {
+                    timeHint.innerHTML = '<strong style="color: #e9c46a;">⚠ Reference schedule</strong> (based on last ' + data.day_name + ')';
+                } else {
+                    timeHint.textContent = 'Classes for ' + data.date_display;
+                }
+            })
+            .catch(err => {
+                timeSelect.innerHTML = '<option value="">Error loading classes</option>';
+                timeHint.textContent = 'Network error';
+                console.error('Error:', err);
+            });
+    });
+
+    timeSelect.addEventListener('change', function() {
+        const time = this.value;
+
+        classSelect.innerHTML = '<option value="">-- Select class --</option>';
+        classSelect.disabled = true;
+        submitBtn.disabled = true;
+
+        if (!time || !classData[time]) {
+            classHint.textContent = 'Select a time to load available classes';
+            return;
+        }
+
+        const classes = classData[time];
+        classes.forEach(className => {
+            const option = document.createElement('option');
+            option.value = className.toLowerCase();
+            option.textContent = className;
+            classSelect.appendChild(option);
+        });
+
+        classSelect.disabled = false;
+        classHint.textContent = classes.length + ' class type(s) available at ' + time;
+    });
+
+    classSelect.addEventListener('change', function() {
+        submitBtn.disabled = !this.value;
+    });
+})();
+</script>
+{% endblock %}

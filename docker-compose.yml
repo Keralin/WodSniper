@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  wodsniper:
+    build: .
+    container_name: wodsniper
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - DATABASE_URL=sqlite:///data/wodsniper.db
+    volumes:
+      - wodsniper_data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  wodsniper_data:
