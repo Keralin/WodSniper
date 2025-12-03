@@ -1,0 +1,176 @@
+# Spanish translations for WodSniper
+msgid ""
+msgstr ""
+"Project-Id-Version: WodSniper 1.0\n"
+"POT-Creation-Date: 2024-12-03 20:00+0000\n"
+"PO-Revision-Date: 2024-12-03 20:00+0000\n"
+"Language: es\n"
+"Language-Team: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# Navigation
+msgid "Dashboard"
+msgstr "Panel"
+
+msgid "New Booking"
+msgstr "Nueva Reserva"
+
+msgid "Settings"
+msgstr "Ajustes"
+
+msgid "Logout"
+msgstr "Cerrar Sesión"
+
+msgid "Sign In"
+msgstr "Iniciar Sesión"
+
+msgid "Sign Up"
+msgstr "Registrarse"
+
+# Footer
+msgid "WodSniper - Precision and speed to catch classes"
+msgstr "WodSniper - Precisión y velocidad para coger clases"
+
+# Login messages
+msgid "Please log in to access this page."
+msgstr "Por favor, inicia sesión para acceder a esta página."
+
+# Flash messages
+msgid "Successfully connected to WodBuster"
+msgstr "Conectado exitosamente a WodBuster"
+
+msgid "Invalid email or password"
+msgstr "Email o contraseña inválidos"
+
+msgid "Account created successfully. Now connect your WodBuster account."
+msgstr "Cuenta creada exitosamente. Ahora conecta tu cuenta de WodBuster."
+
+msgid "You have been logged out"
+msgstr "Has cerrado sesión"
+
+msgid "Please connect your WodBuster account first"
+msgstr "Por favor, conecta tu cuenta de WodBuster primero"
+
+msgid "You already have a booking scheduled for this day/time/class"
+msgstr "Ya tienes una reserva programada para este día/hora/clase"
+
+msgid "Booking deleted"
+msgstr "Reserva eliminada"
+
+msgid "WodBuster not connected"
+msgstr "WodBuster no conectado"
+
+msgid "Session expired. Please reconnect your WodBuster account."
+msgstr "Sesión expirada. Por favor, reconecta tu cuenta de WodBuster."
+
+msgid "Class not found"
+msgstr "Clase no encontrada"
+
+msgid "Reservation cancelled successfully"
+msgstr "Reserva cancelada exitosamente"
+
+msgid "Failed to cancel reservation"
+msgstr "Error al cancelar la reserva"
+
+# Dashboard
+msgid "Available Credits"
+msgstr "Créditos Disponibles"
+
+msgid "Connected"
+msgstr "Conectado"
+
+msgid "Not connected"
+msgstr "No conectado"
+
+msgid "Email notifications"
+msgstr "Notificaciones por email"
+
+msgid "Scheduled Bookings"
+msgstr "Reservas Programadas"
+
+msgid "No bookings scheduled yet"
+msgstr "No hay reservas programadas todavía"
+
+msgid "Create your first booking"
+msgstr "Crea tu primera reserva"
+
+msgid "Active"
+msgstr "Activa"
+
+msgid "Inactive"
+msgstr "Inactiva"
+
+msgid "Book Now"
+msgstr "Reservar Ahora"
+
+msgid "Delete"
+msgstr "Eliminar"
+
+msgid "Logs"
+msgstr "Historial"
+
+# Days of week
+msgid "Monday"
+msgstr "Lunes"
+
+msgid "Tuesday"
+msgstr "Martes"
+
+msgid "Wednesday"
+msgstr "Miércoles"
+
+msgid "Thursday"
+msgstr "Jueves"
+
+msgid "Friday"
+msgstr "Viernes"
+
+msgid "Saturday"
+msgstr "Sábado"
+
+msgid "Sunday"
+msgstr "Domingo"
+
+# Forms
+msgid "Email"
+msgstr "Email"
+
+msgid "Password"
+msgstr "Contraseña"
+
+msgid "Remember me"
+msgstr "Recordarme"
+
+msgid "Day of week"
+msgstr "Día de la semana"
+
+msgid "Time"
+msgstr "Hora"
+
+msgid "Class type"
+msgstr "Tipo de clase"
+
+msgid "Save"
+msgstr "Guardar"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+# Landing page
+msgid "Automate your WodBuster bookings"
+msgstr "Automatiza tus reservas de WodBuster"
+
+msgid "Never miss a class again"
+msgstr "No te pierdas nunca más una clase"
+
+msgid "Get Started"
+msgstr "Empezar"
+
+# Errors
+msgid "Page not found"
+msgstr "Página no encontrada"
+
+msgid "An unexpected error occurred"
+msgstr "Ha ocurrido un error inesperado"

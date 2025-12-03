@@ -1,5 +1,6 @@
 import os
-from flask import Flask
+from flask import Flask, request, session
+from flask_babel import Babel, lazy_gettext as _l
 from flask_login import LoginManager
 from flask_mail import Mail
 from flask_migrate import Migrate
@@ -10,12 +11,22 @@ from app.models import db, User
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
-login_manager.login_message = 'Please log in to access this page.'
+login_manager.login_message = _l('Please log in to access this page.')
 login_manager.login_message_category = 'info'
 
 migrate = Migrate()
 csrf = CSRFProtect()
 mail = Mail()
+babel = Babel()
+
+
+def get_locale():
+    """Select best language based on user preference or browser."""
+    # Check if user has set a language preference
+    if 'language' in session:
+        return session['language']
+    # Fall back to browser's preferred language
+    return request.accept_languages.best_match(['es', 'en'], default='es')
 
 
 def create_app(config_name=None):
@@ -32,6 +43,7 @@ def create_app(config_name=None):
     migrate.init_app(app, db)
     csrf.init_app(app)
     mail.init_app(app)
+    babel.init_app(app, locale_selector=get_locale)
 
     # User loader for Flask-Login
     @login_manager.user_loader

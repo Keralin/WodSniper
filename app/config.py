@@ -22,6 +22,11 @@ class Config:
     # FlareSolverr settings (for Cloudflare bypass)
     FLARESOLVERR_URL = os.environ.get('FLARESOLVERR_URL', None)  # e.g., http://flaresolverr:8191/v1
 
+    # Babel settings (i18n)
+    LANGUAGES = ['es', 'en']
+    BABEL_DEFAULT_LOCALE = 'es'
+    BABEL_DEFAULT_TIMEZONE = 'Europe/Madrid'
+
     # Email settings (Flask-Mail)
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ get_locale() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,14 +15,23 @@
             </a>
             <div class="nav-links">
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('booking.dashboard') }}">Dashboard</a>
-                    <a href="{{ url_for('booking.new_booking') }}">New Booking</a>
-                    <a href="{{ url_for('auth.connect_wodbuster') }}">Settings</a>
-                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline">Logout</a>
+                    <a href="{{ url_for('booking.dashboard') }}">{{ _('Dashboard') }}</a>
+                    <a href="{{ url_for('booking.new_booking') }}">{{ _('New Booking') }}</a>
+                    <a href="{{ url_for('auth.connect_wodbuster') }}">{{ _('Settings') }}</a>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline">{{ _('Logout') }}</a>
                 {% else %}
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline">Sign In</a>
-                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Sign Up</a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline">{{ _('Sign In') }}</a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary">{{ _('Sign Up') }}</a>
                 {% endif %}
+
+                <!-- Language selector -->
+                <div class="language-selector">
+                    {% if get_locale() == 'es' %}
+                        <a href="{{ url_for('booking.set_language', language='en') }}" title="English">🇬🇧</a>
+                    {% else %}
+                        <a href="{{ url_for('booking.set_language', language='es') }}" title="Español">🇪🇸</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </nav>
@@ -46,7 +55,7 @@
 
     <footer class="footer">
         <div class="container">
-            <p>WodSniper - Precision and speed to catch classes 🎯</p>
+            <p>{{ _('WodSniper - Precision and speed to catch classes') }} 🎯</p>
         </div>
     </footer>
 

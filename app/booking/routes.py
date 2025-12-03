@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from flask import render_template, redirect, url_for, flash, jsonify, request
+from flask import render_template, redirect, url_for, flash, jsonify, request, session
 from flask_login import login_required, current_user
 
 from app.booking import booking_bp
@@ -437,3 +437,12 @@ def cancel_reservation(class_id, booking_id):
         flash(f'Error cancelling reservation: {str(e)}', 'error')
 
     return redirect(url_for('booking.my_reservations'))
+
+
+@booking_bp.route('/set-language/<language>')
+def set_language(language):
+    """Set user's preferred language."""
+    from flask import current_app
+    if language in current_app.config.get('LANGUAGES', ['es', 'en']):
+        session['language'] = language
+    return redirect(request.referrer or url_for('booking.index'))
