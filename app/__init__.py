@@ -60,6 +60,11 @@ def create_app(config_name=None):
     # Register error handlers
     register_error_handlers(app)
 
+    # Make get_locale available in templates
+    @app.context_processor
+    def inject_locale():
+        return {'get_locale': get_locale}
+
     # Create database tables
     with app.app_context():
         db.create_all()
