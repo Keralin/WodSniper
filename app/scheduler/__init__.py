@@ -19,6 +19,16 @@ BOOKING_INTERVAL = 0.5  # Minimum seconds between bookings
 def init_scheduler(app):
     """Initialize the scheduler with the Flask app context."""
 
+    # Pre-refresh sessions at 12:50 (10 mins before booking window opens)
+    # This ensures fresh cookies are ready before the critical booking time
+    scheduler.add_job(
+        func=lambda: refresh_all_sessions(app),
+        trigger=CronTrigger(day_of_week='sun', hour=12, minute=50),
+        id='session_refresh',
+        name='Pre-Booking Session Refresh',
+        replace_existing=True
+    )
+
     # Run booking check every Sunday at 12:55 (5 mins before 13:00 opening)
     scheduler.add_job(
         func=lambda: run_scheduled_bookings(app),
@@ -41,6 +51,59 @@ def init_scheduler(app):
 
     scheduler.start()
     logger.info('Scheduler initialized')
+
+
+def refresh_all_sessions(app):
+    """
+    Refresh sessions for all users with active bookings.
+
+    This runs before the booking window opens to ensure fresh cookies
+    are ready, avoiding delays during the critical booking time.
+    """
+    from app.models import db, User, Booking
+    from app.scraper import WodBusterClient, LoginError
+
+    logger.info('=== Starting pre-booking session refresh ===')
+
+    with app.app_context():
+        # Get unique users with active bookings
+        users_with_bookings = db.session.query(User).join(Booking).filter(
+            Booking.is_active == True,
+            User.box_url.isnot(None),
+            User.wodbuster_email.isnot(None)
+        ).distinct().all()
+
+        if not users_with_bookings:
+            logger.info('No users with active bookings found')
+            return
+
+        logger.info(f'Refreshing sessions for {len(users_with_bookings)} users')
+
+        for user in users_with_bookings:
+            try:
+                logger.info(f'Refreshing session for {user.email}')
+                client = WodBusterClient(user.box_url)
+
+                # Always do a fresh login to get new cookies
+                wodbuster_password = user.get_wodbuster_password()
+
+                if wodbuster_password and user.wodbuster_email:
+                    client.login(user.wodbuster_email, wodbuster_password)
+                    user.set_wodbuster_cookies(client.get_cookies())
+                    db.session.commit()
+                    logger.info(f'Session refreshed successfully for {user.email}')
+                else:
+                    logger.warning(f'No credentials stored for {user.email}, skipping refresh')
+
+            except LoginError as e:
+                logger.error(f'Failed to refresh session for {user.email}: {e}')
+            except Exception as e:
+                logger.exception(f'Unexpected error refreshing session for {user.email}: {e}')
+
+            # Small delay between users to avoid rate limiting
+            time.sleep(2)
+
+    logger.info('=== Session refresh complete ===')
 
 
 def run_scheduled_bookings(app):
