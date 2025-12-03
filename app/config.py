@@ -19,6 +19,9 @@ class Config:
     MAX_BOOKING_RETRIES = 20
     REQUEST_TIMEOUT = 10  # seconds
 
+    # FlareSolverr settings (for Cloudflare bypass)
+    FLARESOLVERR_URL = os.environ.get('FLARESOLVERR_URL', None)  # e.g., http://flaresolverr:8191/v1
+
     # Email settings (Flask-Mail)
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))

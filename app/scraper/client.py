@@ -1,5 +1,6 @@
 """WodBuster client using cloudscraper to bypass Cloudflare."""
 
+import os
 import re
 import time
 import logging
@@ -7,6 +8,7 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from urllib.parse import urljoin, urlparse
 
+import requests
 import cloudscraper
 from bs4 import BeautifulSoup
 
@@ -22,6 +24,61 @@ from app.scraper.exceptions import (
 logger = logging.getLogger(__name__)
 
 
+class FlareSolverrClient:
+    """Client for FlareSolverr proxy to bypass Cloudflare."""
+
+    def __init__(self, base_url: str):
+        self.base_url = base_url.rstrip('/')
+        self.timeout = 60000  # 60 seconds max for Cloudflare solving
+
+    def solve(self, url: str, method: str = 'GET', post_data: str = None,
+              cookies: List[Dict] = None) -> Dict[str, Any]:
+        """
+        Send request through FlareSolverr.
+
+        Returns dict with 'cookies', 'response' (HTML), 'status', 'url'
+        """
+        payload = {
+            'cmd': f'request.{method.lower()}',
+            'url': url,
+            'maxTimeout': self.timeout,
+        }
+
+        if post_data:
+            payload['postData'] = post_data
+
+        if cookies:
+            payload['cookies'] = cookies
+
+        try:
+            logger.info(f'FlareSolverr: {method} {url}')
+            resp = requests.post(
+                self.base_url,
+                json=payload,
+                timeout=65  # slightly more than maxTimeout
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+            if data.get('status') == 'ok':
+                solution = data.get('solution', {})
+                return {
+                    'success': True,
+                    'cookies': solution.get('cookies', []),
+                    'response': solution.get('response', ''),
+                    'status': solution.get('status', 0),
+                    'url': solution.get('url', url),
+                }
+            else:
+                error_msg = data.get('message', 'Unknown FlareSolverr error')
+                logger.error(f'FlareSolverr error: {error_msg}')
+                return {'success': False, 'error': error_msg}
+
+        except Exception as e:
+            logger.error(f'FlareSolverr request failed: {e}')
+            return {'success': False, 'error': str(e)}
+
+
 class WodBusterClient:
     """Client for interacting with WodBuster."""
 
@@ -32,19 +89,24 @@ class WodBusterClient:
         'Chrome/119.0.0.0 Safari/537.36'
     )
 
-    def __init__(self, box_url: str, timeout: int = 15):
+    def __init__(self, box_url: str, timeout: int = 15, flaresolverr_url: str = None):
         """
         Initialize WodBuster client.
 
         Args:
             box_url: The box's WodBuster URL (e.g., https://teknix.wodbuster.com)
             timeout: Request timeout in seconds
+            flaresolverr_url: FlareSolverr URL for Cloudflare bypass (optional)
         """
         self.box_url = box_url.rstrip('/')
         self.box_name = self._extract_box_name(box_url)
         self.timeout = timeout
         self.session = self._create_session()
         self._logged_in = False
+
+        # FlareSolverr for Cloudflare bypass
+        self.flaresolverr_url = flaresolverr_url or os.environ.get('FLARESOLVERR_URL')
+        self.flaresolverr = FlareSolverrClient(self.flaresolverr_url) if self.flaresolverr_url else None
 
     def _extract_box_name(self, url: str) -> str:
         """Extract box name from URL."""
@@ -119,6 +181,119 @@ class WodBusterClient:
         logger.debug(f'Extracted {len(tokens)} tokens')
         return tokens
 
+    def _apply_flaresolverr_cookies(self, cookies: List[Dict]) -> None:
+        """Apply cookies from FlareSolverr to the session."""
+        for cookie in cookies:
+            self.session.cookies.set(
+                cookie.get('name'),
+                cookie.get('value'),
+                domain=cookie.get('domain', ''),
+                path=cookie.get('path', '/')
+            )
+
+    def _login_with_flaresolverr(self, email: str, password: str) -> bool:
+        """Login using FlareSolverr for Cloudflare bypass."""
+        logger.info(f'Using FlareSolverr for login to {self.box_name}')
+        login_url = self._get_login_url()
+
+        # Phase 1: Get login page through FlareSolverr
+        result = self.flaresolverr.solve(login_url)
+        if not result.get('success'):
+            raise LoginError(f'FlareSolverr failed: {result.get("error")}')
+
+        html = result.get('response', '')
+        self._apply_flaresolverr_cookies(result.get('cookies', []))
+
+        tokens = self._extract_form_tokens(html)
+        if not tokens.get('__VIEWSTATEC') and not tokens.get('__VIEWSTATE'):
+            raise LoginError('Could not extract form tokens from login page')
+
+        # Phase 2: Submit credentials through FlareSolverr
+        login_data = self._build_login_data(tokens, email, password)
+
+        # Convert dict to URL-encoded string for FlareSolverr POST
+        from urllib.parse import urlencode
+        post_data = urlencode(login_data)
+
+        # Pass existing cookies to FlareSolverr
+        existing_cookies = [
+            {'name': c.name, 'value': c.value, 'domain': c.domain, 'path': c.path}
+            for c in self.session.cookies
+        ]
+
+        result = self.flaresolverr.solve(
+            login_url,
+            method='POST',
+            post_data=post_data,
+            cookies=existing_cookies
+        )
+
+        if not result.get('success'):
+            raise LoginError(f'FlareSolverr login failed: {result.get("error")}')
+
+        html = result.get('response', '')
+        self._apply_flaresolverr_cookies(result.get('cookies', []))
+
+        # Check for login errors
+        if self._has_login_error(html):
+            raise LoginError('Invalid email or password')
+
+        # Phase 3: Handle device confirmation if needed
+        if self._needs_device_confirmation(html):
+            logger.info('Device confirmation required (FlareSolverr)')
+            tokens = self._extract_form_tokens(html)
+            confirm_data = self._build_device_confirm_data(tokens, html)
+            post_data = urlencode(confirm_data)
+
+            existing_cookies = [
+                {'name': c.name, 'value': c.value, 'domain': c.domain, 'path': c.path}
+                for c in self.session.cookies
+            ]
+
+            result = self.flaresolverr.solve(
+                result.get('url', login_url),
+                method='POST',
+                post_data=post_data,
+                cookies=existing_cookies
+            )
+            if result.get('success'):
+                self._apply_flaresolverr_cookies(result.get('cookies', []))
+
+        # Verify login
+        if self._verify_login():
+            self._logged_in = True
+            logger.info(f'Login successful via FlareSolverr')
+            return True
+
+        raise LoginError('FlareSolverr login failed - could not establish session')
+
+    def _build_device_confirm_data(self, tokens: Dict[str, str], html: str) -> Dict[str, str]:
+        """Build device confirmation form data."""
+        soup = BeautifulSoup(html, 'lxml')
+
+        confirm_data = {
+            '__VIEWSTATE': tokens.get('__VIEWSTATE', ''),
+            '__VIEWSTATEC': tokens.get('__VIEWSTATEC', ''),
+            '__EVENTVALIDATION': tokens.get('__EVENTVALIDATION', ''),
+            '__EVENTTARGET': '',
+            '__EVENTARGUMENT': '',
+            'CSRFToken': tokens.get('CSRFToken', ''),
+        }
+
+        # Look for the secure device button
+        secure_btn = soup.find('input', {'id': re.compile(r'CtlSeguro', re.I)})
+        if secure_btn:
+            btn_name = secure_btn.get('name', '')
+            if btn_name:
+                confirm_data[btn_name] = secure_btn.get('value', 'Aceptar')
+
+        # Add ctl00 tokens
+        for key, value in tokens.items():
+            if key.startswith('ctl00$') and key not in confirm_data:
+                confirm_data[key] = value
+
+        return confirm_data
+
     def login(self, email: str, password: str) -> bool:
         """
         Login to WodBuster using the 3-phase authentication.
@@ -126,9 +301,19 @@ class WodBusterClient:
         Phase 1: Get login page and extract tokens
         Phase 2: Submit credentials
         Phase 3: Handle device confirmation if needed
+
+        Uses FlareSolverr if available for Cloudflare bypass.
         """
         logger.info(f'Attempting login for {email} to box {self.box_name}')
 
+        # Try FlareSolverr first if available
+        if self.flaresolverr:
+            try:
+                return self._login_with_flaresolverr(email, password)
+            except Exception as e:
+                logger.warning(f'FlareSolverr login failed, falling back to cloudscraper: {e}')
+
+        # Fallback to regular cloudscraper
         try:
             # Phase 1: Get login page
             login_url = self._get_login_url()
