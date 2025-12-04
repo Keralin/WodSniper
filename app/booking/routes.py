@@ -16,6 +16,41 @@ def index():
     return render_template('index.html')
 
 
+@booking_bp.route('/health')
+def health_check():
+    """Health check endpoint for monitoring and Railway."""
+    from app.scheduler import scheduler
+
+    health = {
+        'status': 'healthy',
+        'timestamp': datetime.utcnow().isoformat(),
+        'checks': {}
+    }
+
+    # Check database
+    try:
+        db.session.execute(db.text('SELECT 1'))
+        health['checks']['database'] = 'ok'
+    except Exception as e:
+        health['checks']['database'] = f'error: {str(e)}'
+        health['status'] = 'unhealthy'
+
+    # Check scheduler
+    try:
+        if scheduler.running:
+            jobs = scheduler.get_jobs()
+            health['checks']['scheduler'] = f'ok ({len(jobs)} jobs)'
+        else:
+            health['checks']['scheduler'] = 'not running'
+            health['status'] = 'unhealthy'
+    except Exception as e:
+        health['checks']['scheduler'] = f'error: {str(e)}'
+        health['status'] = 'unhealthy'
+
+    status_code = 200 if health['status'] == 'healthy' else 503
+    return jsonify(health), status_code
+
+
 @booking_bp.route('/dashboard')
 @login_required
 def dashboard():
