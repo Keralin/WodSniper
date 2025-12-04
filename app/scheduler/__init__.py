@@ -52,6 +52,10 @@ def init_scheduler(app):
     scheduler.start()
     logger.info('Scheduler initialized')
 
+    # Log scheduled jobs for verification
+    for job in scheduler.get_jobs():
+        logger.info(f'Scheduled job: {job.name} - Next run: {job.next_run_time}')
+
 
 def refresh_all_sessions(app):
     """
@@ -112,7 +116,9 @@ def run_scheduled_bookings(app):
     from app.scraper import WodBusterClient
     from collections import defaultdict
 
-    logger.info('Starting scheduled booking run')
+    logger.info('=' * 60)
+    logger.info('=== BOOKING WINDOW TRIGGERED ===')
+    logger.info(f'Current time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")}')
 
     with app.app_context():
         # Get all active bookings for today's day of week
@@ -139,12 +145,15 @@ def run_scheduled_bookings(app):
 
         if now < target_time:
             wait_seconds = (target_time - now).total_seconds()
-            logger.info(f'Waiting {wait_seconds:.1f} seconds until 13:00')
+            logger.info(f'Waiting {wait_seconds:.1f} seconds until 13:00...')
             time.sleep(max(0, wait_seconds - 1))  # Wake up 1 second early
 
             # Precise wait for the last second
+            logger.debug('Entering precision wait loop...')
             while datetime.now() < target_time:
                 time.sleep(0.01)
+
+        logger.info(f'=== BOOKING START at {datetime.now().strftime("%H:%M:%S.%f")} ===')
 
         # Collect results by user for email notifications
         results_by_user = defaultdict(list)
@@ -173,6 +182,9 @@ def run_scheduled_bookings(app):
         # Send email notifications to each user
         _send_booking_notifications(app, results_by_user)
 
+        logger.info(f'=== BOOKING RUN COMPLETE at {datetime.now().strftime("%H:%M:%S")} ===')
+        logger.info('=' * 60)
+
 
 def _process_single_booking(booking, app):
     """
@@ -188,7 +200,7 @@ def _process_single_booking(booking, app):
     )
 
     user = booking.user
-    logger.info(f'Processing booking {booking.id} for user {user.email}')
+    logger.info(f'Processing booking {booking.id}: {booking.day_name} {booking.time} {booking.class_type} (user: {user.email})')
     target_date = None
     message = ''
 
@@ -228,10 +240,13 @@ def _process_single_booking(booking, app):
         target_date = today + timedelta(days=days_ahead)
 
         # Find and book the class
+        logger.debug(f'Searching for class: {booking.class_type} at {booking.time} on {target_date.strftime("%Y-%m-%d")}')
         cls = client.find_class(target_date, booking.time, booking.class_type)
 
         if not cls:
             raise ClassNotFoundError(f'Class not found: {booking.class_type} at {booking.time}')
+
+        logger.debug(f'Found class: {cls}')
 
         if client.book_class(cls['id']):
             booking.status = 'success'

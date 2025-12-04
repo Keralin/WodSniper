@@ -2,18 +2,22 @@
 """WodSniper - Entry point."""
 
 import os
+import sys
 import logging
 from app import create_app
 from app.scheduler import init_scheduler, shutdown_scheduler
 
-# Configure logging
+# Configure logging to stdout (Railway treats stderr as errors)
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stdout
 )
-# Reduce noise from other libraries
+# Reduce noise from external libraries only
 logging.getLogger('urllib3').setLevel(logging.WARNING)
 logging.getLogger('cloudscraper').setLevel(logging.WARNING)
+logging.getLogger('werkzeug').setLevel(logging.INFO)
+logging.getLogger('apscheduler').setLevel(logging.DEBUG)
 
 app = create_app()
 
