@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}New Booking - WodSniper{% endblock %}
+{% block title %}{{ _('New Booking') }} - WodSniper{% endblock %}
 
 {% block content %}
 <div class="auth-container">
     <div class="auth-card">
-        <h2>New Scheduled Booking</h2>
+        <h2>{{ _('New Scheduled Booking') }}</h2>
         <p class="auth-description">
-            Set up an automatic booking. WodSniper will attempt to book this class every week.
+            {{ _('Set up an automatic booking. WodSniper will attempt to book this class every week.') }}
         </p>
 
         <form method="POST" class="form" id="booking-form">
@@ -16,14 +16,14 @@
             <div class="form-group">
                 {{ form.day_of_week.label }}
                 <select name="day_of_week" id="day_of_week" class="form-control" required>
-                    <option value="">-- Select day --</option>
-                    <option value="0">Monday</option>
-                    <option value="1">Tuesday</option>
-                    <option value="2">Wednesday</option>
-                    <option value="3">Thursday</option>
-                    <option value="4">Friday</option>
-                    <option value="5">Saturday</option>
-                    <option value="6">Sunday</option>
+                    <option value="">-- {{ _('Select day') }} --</option>
+                    <option value="0">{{ _('Monday') }}</option>
+                    <option value="1">{{ _('Tuesday') }}</option>
+                    <option value="2">{{ _('Wednesday') }}</option>
+                    <option value="3">{{ _('Thursday') }}</option>
+                    <option value="4">{{ _('Friday') }}</option>
+                    <option value="5">{{ _('Saturday') }}</option>
+                    <option value="6">{{ _('Sunday') }}</option>
                 </select>
                 {% for error in form.day_of_week.errors %}
                     <span class="form-error">{{ error }}</span>
@@ -31,22 +31,22 @@
             </div>
 
             <div class="form-group">
-                <label for="time">Time</label>
+                <label for="time">{{ _('Time') }}</label>
                 <select name="time" id="time" class="form-control" required disabled>
-                    <option value="">-- Select day first --</option>
+                    <option value="">-- {{ _('Select day first') }} --</option>
                 </select>
-                <span class="form-hint" id="time-hint">Select a day to load available times</span>
+                <span class="form-hint" id="time-hint">{{ _('Select a day to load available times') }}</span>
                 {% for error in form.time.errors %}
                     <span class="form-error">{{ error }}</span>
                 {% endfor %}
             </div>
 
             <div class="form-group">
-                <label for="class_type">Class Type</label>
+                <label for="class_type">{{ _('Class Type') }}</label>
                 <select name="class_type" id="class_type" class="form-control" required disabled>
-                    <option value="">-- Select time first --</option>
+                    <option value="">-- {{ _('Select time first') }} --</option>
                 </select>
-                <span class="form-hint" id="class-hint">Select a time to load available classes</span>
+                <span class="form-hint" id="class-hint">{{ _('Select a time to load available classes') }}</span>
                 {% for error in form.class_type.errors %}
                     <span class="form-error">{{ error }}</span>
                 {% endfor %}
@@ -54,13 +54,13 @@
 
             <div class="form-group">
                 <button type="submit" class="btn btn-primary btn-block" id="submit-btn" disabled>
-                    Schedule Booking
+                    {{ _('Schedule Booking') }}
                 </button>
             </div>
         </form>
 
         <p class="auth-footer">
-            <a href="{{ url_for('booking.dashboard') }}">Back to Dashboard</a>
+            <a href="{{ url_for('booking.dashboard') }}">{{ _('Back to Dashboard') }}</a>
         </p>
     </div>
 </div>
@@ -74,22 +74,42 @@
     const timeHint = document.getElementById('time-hint');
     const classHint = document.getElementById('class-hint');
 
+    // Translated strings
+    const i18n = {
+        loading: '{{ _("Loading...") }}',
+        selectDayFirst: '-- {{ _("Select day first") }} --',
+        selectTimeFirst: '-- {{ _("Select time first") }} --',
+        selectTime: '-- {{ _("Select time") }} --',
+        selectClass: '-- {{ _("Select class") }} --',
+        selectDayHint: '{{ _("Select a day to load available times") }}',
+        selectTimeHint: '{{ _("Select a time to load available classes") }}',
+        errorLoading: '{{ _("Error loading classes") }}',
+        networkError: '{{ _("Network error") }}',
+        noClasses: '{{ _("No classes available") }}',
+        noClassesDay: '{{ _("No classes found for this day") }}',
+        classesFor: '{{ _("Classes for") }}',
+        referenceSchedule: '{{ _("Reference schedule") }}',
+        basedOnLast: '{{ _("based on last") }}',
+        classes: '{{ _("classes") }}',
+        classTypesAvailable: '{{ _("class type(s) available at") }}'
+    };
+
     let classData = {}; // Store classes by time
 
     daySelect.addEventListener('change', function() {
         const day = this.value;
 
         // Reset downstream selects
-        timeSelect.innerHTML = '<option value="">Loading...</option>';
+        timeSelect.innerHTML = '<option value="">' + i18n.loading + '</option>';
         timeSelect.disabled = true;
-        classSelect.innerHTML = '<option value="">-- Select time first --</option>';
+        classSelect.innerHTML = '<option value="">' + i18n.selectTimeFirst + '</option>';
         classSelect.disabled = true;
         submitBtn.disabled = true;
         classData = {};
 
         if (!day) {
-            timeSelect.innerHTML = '<option value="">-- Select day first --</option>';
-            timeHint.textContent = 'Select a day to load available times';
+            timeSelect.innerHTML = '<option value="">' + i18n.selectDayFirst + '</option>';
+            timeHint.textContent = i18n.selectDayHint;
             return;
         }
 
@@ -99,23 +119,23 @@
             .then(data => {
                 if (data.error) {
                     timeSelect.innerHTML = '<option value="">Error: ' + data.error + '</option>';
-                    timeHint.textContent = 'Error loading classes';
+                    timeHint.textContent = i18n.errorLoading;
                     return;
                 }
 
                 if (!data.slots || data.slots.length === 0) {
-                    timeSelect.innerHTML = '<option value="">No classes available</option>';
-                    timeHint.textContent = 'No classes found for this day';
+                    timeSelect.innerHTML = '<option value="">' + i18n.noClasses + '</option>';
+                    timeHint.textContent = i18n.noClassesDay;
                     return;
                 }
 
                 // Store class data and populate time dropdown
-                timeSelect.innerHTML = '<option value="">-- Select time --</option>';
+                timeSelect.innerHTML = '<option value="">' + i18n.selectTime + '</option>';
                 data.slots.forEach(slot => {
                     classData[slot.time] = slot.classes;
                     const option = document.createElement('option');
                     option.value = slot.time;
-                    option.textContent = slot.time + ' (' + slot.classes.length + ' classes)';
+                    option.textContent = slot.time + ' (' + slot.classes.length + ' ' + i18n.classes + ')';
                     timeSelect.appendChild(option);
                 });
 
@@ -123,14 +143,14 @@
 
                 // Show reference note if using last week's schedule
                 if (data.is_reference) {
-                    timeHint.innerHTML = '<strong style="color: #e9c46a;">⚠ Reference schedule</strong> (based on last ' + data.day_name + ')';
+                    timeHint.innerHTML = '<strong style="color: #e9c46a;">⚠ ' + i18n.referenceSchedule + '</strong> (' + i18n.basedOnLast + ' ' + data.day_name + ')';
                 } else {
-                    timeHint.textContent = 'Classes for ' + data.date_display;
+                    timeHint.textContent = i18n.classesFor + ' ' + data.date_display;
                 }
             })
             .catch(err => {
-                timeSelect.innerHTML = '<option value="">Error loading classes</option>';
-                timeHint.textContent = 'Network error';
+                timeSelect.innerHTML = '<option value="">' + i18n.errorLoading + '</option>';
+                timeHint.textContent = i18n.networkError;
                 console.error('Error:', err);
             });
     });
@@ -138,12 +158,12 @@
     timeSelect.addEventListener('change', function() {
         const time = this.value;
 
-        classSelect.innerHTML = '<option value="">-- Select class --</option>';
+        classSelect.innerHTML = '<option value="">' + i18n.selectClass + '</option>';
         classSelect.disabled = true;
         submitBtn.disabled = true;
 
         if (!time || !classData[time]) {
-            classHint.textContent = 'Select a time to load available classes';
+            classHint.textContent = i18n.selectTimeHint;
             return;
         }
 
@@ -156,7 +176,7 @@
         });
 
         classSelect.disabled = false;
-        classHint.textContent = classes.length + ' class type(s) available at ' + time;
+        classHint.textContent = classes.length + ' ' + i18n.classTypesAvailable + ' ' + time;
     });
 
     classSelect.addEventListener('change', function() {

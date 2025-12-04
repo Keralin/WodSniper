@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e63946;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d62839;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="640" fill="#1a1a2e"/>
+
+  <!-- Logo icon (left side) -->
+  <g transform="translate(200, 320)">
+    <!-- Crosshair outer ring -->
+    <circle cx="0" cy="0" r="120" fill="none" stroke="#e63946" stroke-width="6" opacity="0.8"/>
+
+    <!-- Crosshair inner ring -->
+    <circle cx="0" cy="0" r="70" fill="none" stroke="#e63946" stroke-width="4" opacity="0.6"/>
+
+    <!-- Crosshair lines -->
+    <line x1="0" y1="-140" x2="0" y2="-85" stroke="#e63946" stroke-width="6" stroke-linecap="round"/>
+    <line x1="0" y1="85" x2="0" y2="140" stroke="#e63946" stroke-width="6" stroke-linecap="round"/>
+    <line x1="-140" y1="0" x2="-85" y2="0" stroke="#e63946" stroke-width="6" stroke-linecap="round"/>
+    <line x1="85" y1="0" x2="140" y2="0" stroke="#e63946" stroke-width="6" stroke-linecap="round"/>
+
+    <!-- Dumbbell (horizontal, centered) -->
+    <g>
+      <!-- Bar -->
+      <rect x="-50" y="-6" width="100" height="12" rx="3" fill="#f1faee"/>
+      <!-- Left weight -->
+      <rect x="-65" y="-22" width="20" height="44" rx="4" fill="url(#gradient)"/>
+      <!-- Right weight -->
+      <rect x="45" y="-22" width="20" height="44" rx="4" fill="url(#gradient)"/>
+    </g>
+
+    <!-- Center dot -->
+    <circle cx="0" cy="0" r="8" fill="#e63946"/>
+  </g>
+
+  <!-- Text "WodSniper" -->
+  <text x="420" y="300" font-family="Arial Black, Arial, sans-serif" font-size="120" font-weight="900" fill="#f1faee">
+    Wod<tspan fill="#e63946">Sniper</tspan>
+  </text>
+
+  <!-- Tagline -->
+  <text x="420" y="380" font-family="Arial, sans-serif" font-size="36" fill="#a8dadc" opacity="0.9">
+    Automatic class booking for CrossFit
+  </text>
+</svg>

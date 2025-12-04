@@ -72,6 +72,11 @@ body {
     font-size: 1.8rem;
 }
 
+.logo-img {
+    width: 32px;
+    height: 32px;
+}
+
 .nav-links {
     display: flex;
     gap: 1rem;
@@ -170,6 +175,12 @@ body {
 .hero {
     text-align: center;
     padding: 3rem 0;
+}
+
+.hero-logo {
+    width: 150px;
+    height: 150px;
+    margin-bottom: 1rem;
 }
 
 .hero h1 {

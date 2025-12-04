@@ -1,20 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}Connect WodBuster - WodSniper{% endblock %}
+{% block title %}{{ _('Connect WodBuster') }} - WodSniper{% endblock %}
 
 {% block content %}
 <div class="auth-container">
     <div class="auth-card">
-        <h2>Connect WodBuster</h2>
+        <h2>{{ _('Connect WodBuster') }}</h2>
         <p class="auth-description">
-            Connect your WodBuster account so WodSniper can make bookings for you.
+            {{ _('Connect your WodBuster account so WodSniper can make bookings for you.') }}
         </p>
 
         {% if current_user.box_url %}
         <div class="current-connection">
             <span class="connection-status connected"></span>
-            <strong>Connected to:</strong> {{ current_user.box_name }}
-            <a href="{{ url_for('auth.test_connection') }}" class="btn btn-sm btn-outline">Verify</a>
+            <strong>{{ _('Connected to:') }}</strong> {{ current_user.box_name }}
+            <a href="{{ url_for('auth.test_connection') }}" class="btn btn-sm btn-outline">{{ _('Verify') }}</a>
         </div>
         {% endif %}
 
@@ -24,7 +24,7 @@
             <div class="form-group">
                 {{ form.box_url.label }}
                 {{ form.box_url(class="form-control") }}
-                <span class="form-hint">Example: https://yourbox.wodbuster.com</span>
+                <span class="form-hint">{{ _('Example:') }} https://yourbox.wodbuster.com</span>
                 {% for error in form.box_url.errors %}
                     <span class="form-error">{{ error }}</span>
                 {% endfor %}
@@ -41,7 +41,7 @@
             <div class="form-group">
                 {{ form.wodbuster_password.label }}
                 {{ form.wodbuster_password(class="form-control") }}
-                <span class="form-hint">Your password is only used for authentication, it is not stored.</span>
+                <span class="form-hint">{{ _('Your password is encrypted and stored securely for automatic re-login.') }}</span>
                 {% for error in form.wodbuster_password.errors %}
                     <span class="form-error">{{ error }}</span>
                 {% endfor %}
@@ -53,7 +53,7 @@
         </form>
 
         <p class="auth-footer">
-            <a href="{{ url_for('booking.dashboard') }}">Back to Dashboard</a>
+            <a href="{{ url_for('booking.dashboard') }}">{{ _('Back to Dashboard') }}</a>
         </p>
     </div>
 </div>

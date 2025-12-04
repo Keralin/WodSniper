@@ -159,18 +159,316 @@ msgid "Cancel"
 msgstr "Cancel"
 
 # Landing page
-msgid "Automate your WodBuster bookings"
-msgstr "Automate your WodBuster bookings"
+msgid "Automatic Class Booking"
+msgstr "Automatic Class Booking"
 
-msgid "Never miss a class again"
-msgstr "Never miss a class again"
+msgid "Automatic class booking for your CrossFit box"
+msgstr "Automatic class booking for your CrossFit box"
+
+msgid "Speed"
+msgstr "Speed"
+
+msgid "Book the moment spots become available"
+msgstr "Book the moment spots become available"
+
+msgid "Automatic"
+msgstr "Automatic"
+
+msgid "Set it once, book every week"
+msgstr "Set it once, book every week"
+
+msgid "Multi-Box"
+msgstr "Multi-Box"
+
+msgid "Compatible with any WodBuster box"
+msgstr "Compatible with any WodBuster box"
 
 msgid "Get Started"
 msgstr "Get Started"
 
+msgid "I have an account"
+msgstr "I have an account"
+
+msgid "How it works"
+msgstr "How it works"
+
+msgid "Connect your WodBuster"
+msgstr "Connect your WodBuster"
+
+msgid "Enter your box URL and credentials"
+msgstr "Enter your box URL and credentials"
+
+msgid "Configure your classes"
+msgstr "Configure your classes"
+
+msgid "Choose day, time and class type you want to book"
+msgstr "Choose day, time and class type you want to book"
+
+msgid "Relax"
+msgstr "Relax"
+
+msgid "WodSniper will automatically book when spots open"
+msgstr "WodSniper will automatically book when spots open"
+
+# Auth - Login
+msgid "Don't have an account?"
+msgstr "Don't have an account?"
+
+# Auth - Register
+msgid "Create Account"
+msgstr "Create Account"
+
+msgid "Confirm Password"
+msgstr "Confirm Password"
+
+msgid "Already have an account?"
+msgstr "Already have an account?"
+
+# Auth - Connect WodBuster
+msgid "Connect WodBuster"
+msgstr "Connect WodBuster"
+
+msgid "Connect your WodBuster account so WodSniper can make bookings for you."
+msgstr "Connect your WodBuster account so WodSniper can make bookings for you."
+
+msgid "Connected to:"
+msgstr "Connected to:"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Box URL"
+msgstr "Box URL"
+
+msgid "Example:"
+msgstr "Example:"
+
+msgid "WodBuster Email"
+msgstr "WodBuster Email"
+
+msgid "WodBuster Password"
+msgstr "WodBuster Password"
+
+msgid "Your password is encrypted and stored securely for automatic re-login."
+msgstr "Your password is encrypted and stored securely for automatic re-login."
+
+msgid "Back to Dashboard"
+msgstr "Back to Dashboard"
+
+# Dashboard - Extended
+msgid "My Reservations"
+msgstr "My Reservations"
+
+msgid "WodBuster not connected."
+msgstr "WodBuster not connected."
+
+msgid "Connect your account"
+msgstr "Connect your account"
+
+msgid "to start booking automatically."
+msgstr "to start booking automatically."
+
+msgid "No classes available!"
+msgstr "No classes available!"
+
+msgid "You have 0 credits left. Automatic bookings will fail until you renew your subscription."
+msgstr "You have 0 credits left. Automatic bookings will fail until you renew your subscription."
+
+msgid "Low credits!"
+msgstr "Low credits!"
+
+msgid "You only have %(count)s class(es) left. Consider renewing soon."
+msgstr "You only have %(count)s class(es) left. Consider renewing soon."
+
+msgid "Day"
+msgstr "Day"
+
+msgid "Class"
+msgstr "Class"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Last Booking"
+msgstr "Last Booking"
+
+msgid "Actions"
+msgstr "Actions"
+
+msgid "Pending"
+msgstr "Pending"
+
+msgid "Booked"
+msgstr "Booked"
+
+msgid "Failed"
+msgstr "Failed"
+
+msgid "Waiting"
+msgstr "Waiting"
+
+msgid "Book now"
+msgstr "Book now"
+
+msgid "Book"
+msgstr "Book"
+
+msgid "Deactivate"
+msgstr "Deactivate"
+
+msgid "Activate"
+msgstr "Activate"
+
+msgid "View history"
+msgstr "View history"
+
+msgid "History"
+msgstr "History"
+
+msgid "Delete this scheduled booking?"
+msgstr "Delete this scheduled booking?"
+
+msgid "You don't have any scheduled bookings."
+msgstr "You don't have any scheduled bookings."
+
+msgid "Information"
+msgstr "Information"
+
+msgid "Connected Box"
+msgstr "Connected Box"
+
+msgid "Active Bookings"
+msgstr "Active Bookings"
+
+msgid "Notifications"
+msgstr "Notifications"
+
+msgid "Receive a summary after automatic bookings"
+msgstr "Receive a summary after automatic bookings"
+
+# New Booking
+msgid "New Scheduled Booking"
+msgstr "New Scheduled Booking"
+
+msgid "Set up an automatic booking. WodSniper will attempt to book this class every week."
+msgstr "Set up an automatic booking. WodSniper will attempt to book this class every week."
+
+msgid "Select day"
+msgstr "Select day"
+
+msgid "Select day first"
+msgstr "Select day first"
+
+msgid "Select time first"
+msgstr "Select time first"
+
+msgid "Select a day to load available times"
+msgstr "Select a day to load available times"
+
+msgid "Class Type"
+msgstr "Class Type"
+
+msgid "Select a time to load available classes"
+msgstr "Select a time to load available classes"
+
+msgid "Schedule Booking"
+msgstr "Schedule Booking"
+
+msgid "Loading..."
+msgstr "Loading..."
+
+msgid "Select time"
+msgstr "Select time"
+
+msgid "Select class"
+msgstr "Select class"
+
+msgid "Error loading classes"
+msgstr "Error loading classes"
+
+msgid "Network error"
+msgstr "Network error"
+
+msgid "No classes available"
+msgstr "No classes available"
+
+msgid "No classes found for this day"
+msgstr "No classes found for this day"
+
+msgid "Classes for"
+msgstr "Classes for"
+
+msgid "Reference schedule"
+msgstr "Reference schedule"
+
+msgid "based on last"
+msgstr "based on last"
+
+msgid "classes"
+msgstr "classes"
+
+msgid "class type(s) available at"
+msgstr "class type(s) available at"
+
+# Booking Logs
+msgid "Booking History"
+msgstr "Booking History"
+
+msgid "Back"
+msgstr "Back"
+
+msgid "Successful"
+msgstr "Successful"
+
+msgid "Recent Attempts"
+msgstr "Recent Attempts"
+
+msgid "Target date:"
+msgstr "Target date:"
+
+msgid "No attempts recorded yet."
+msgstr "No attempts recorded yet."
+
+# My Reservations
+msgid "Error:"
+msgstr "Error:"
+
+msgid "Upcoming Classes (Next 7 days)"
+msgstr "Upcoming Classes (Next 7 days)"
+
+msgid "Date"
+msgstr "Date"
+
+msgid "Cancel this reservation on WodBuster?"
+msgstr "Cancel this reservation on WodBuster?"
+
+msgid "Cancel reservation"
+msgstr "Cancel reservation"
+
+msgid "No upcoming reservations found."
+msgstr "No upcoming reservations found."
+
+msgid "Book a class from the dashboard or directly on WodBuster."
+msgstr "Book a class from the dashboard or directly on WodBuster."
+
+msgid "This page shows your upcoming reservations on WodBuster for the next 7 days."
+msgstr "This page shows your upcoming reservations on WodBuster for the next 7 days."
+
+msgid "You can cancel reservations directly from here."
+msgstr "You can cancel reservations directly from here."
+
 # Errors
+msgid "Page Not Found"
+msgstr "Page Not Found"
+
 msgid "Page not found"
 msgstr "Page not found"
+
+msgid "Go Home"
+msgstr "Go Home"
+
+msgid "Server Error"
+msgstr "Server Error"
 
 msgid "An unexpected error occurred"
 msgstr "An unexpected error occurred"

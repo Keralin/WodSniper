@@ -1,53 +1,54 @@
 {% extends "base.html" %}
 
-{% block title %}WodSniper - Automatic Class Booking{% endblock %}
+{% block title %}WodSniper - {{ _('Automatic Class Booking') }}{% endblock %}
 
 {% block content %}
 <div class="hero">
-    <h1>🎯 WodSniper</h1>
-    <p class="hero-subtitle">Automatic class booking for your CrossFit box</p>
+    <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="WodSniper" class="hero-logo">
+    <h1>WodSniper</h1>
+    <p class="hero-subtitle">{{ _('Automatic class booking for your CrossFit box') }}</p>
 
     <div class="features">
         <div class="feature">
             <span class="feature-icon">⚡</span>
-            <h3>Speed</h3>
-            <p>Book the moment spots become available</p>
+            <h3>{{ _('Speed') }}</h3>
+            <p>{{ _('Book the moment spots become available') }}</p>
         </div>
         <div class="feature">
             <span class="feature-icon">🔄</span>
-            <h3>Automatic</h3>
-            <p>Set it once, book every week</p>
+            <h3>{{ _('Automatic') }}</h3>
+            <p>{{ _('Set it once, book every week') }}</p>
         </div>
         <div class="feature">
             <span class="feature-icon">📱</span>
-            <h3>Multi-Box</h3>
-            <p>Compatible with any WodBuster box</p>
+            <h3>{{ _('Multi-Box') }}</h3>
+            <p>{{ _('Compatible with any WodBuster box') }}</p>
         </div>
     </div>
 
     <div class="cta">
-        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Get Started</a>
-        <a href="{{ url_for('auth.login') }}" class="btn btn-outline btn-lg">I have an account</a>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">{{ _('Get Started') }}</a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-outline btn-lg">{{ _('I have an account') }}</a>
     </div>
 </div>
 
 <section class="how-it-works">
-    <h2>How it works</h2>
+    <h2>{{ _('How it works') }}</h2>
     <div class="steps">
         <div class="step">
             <span class="step-number">1</span>
-            <h4>Connect your WodBuster</h4>
-            <p>Enter your box URL and credentials</p>
+            <h4>{{ _('Connect your WodBuster') }}</h4>
+            <p>{{ _('Enter your box URL and credentials') }}</p>
         </div>
         <div class="step">
             <span class="step-number">2</span>
-            <h4>Configure your classes</h4>
-            <p>Choose day, time and class type you want to book</p>
+            <h4>{{ _('Configure your classes') }}</h4>
+            <p>{{ _('Choose day, time and class type you want to book') }}</p>
         </div>
         <div class="step">
             <span class="step-number">3</span>
-            <h4>Relax</h4>
-            <p>WodSniper will automatically book when spots open</p>
+            <h4>{{ _('Relax') }}</h4>
+            <p>{{ _('WodSniper will automatically book when spots open') }}</p>
         </div>
     </div>
 </section>

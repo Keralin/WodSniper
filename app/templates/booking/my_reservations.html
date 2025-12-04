@@ -1,33 +1,33 @@
 {% extends "base.html" %}
 
-{% block title %}My Reservations - WodSniper{% endblock %}
+{% block title %}{{ _('My Reservations') }} - WodSniper{% endblock %}
 
 {% block content %}
 <div class="dashboard">
     <div class="dashboard-header">
-        <h1>My Reservations</h1>
-        <a href="{{ url_for('booking.dashboard') }}" class="btn btn-outline">Back to Dashboard</a>
+        <h1>{{ _('My Reservations') }}</h1>
+        <a href="{{ url_for('booking.dashboard') }}" class="btn btn-outline">{{ _('Back to Dashboard') }}</a>
     </div>
 
     {% if error %}
     <div class="alert alert-danger">
-        <strong>Error:</strong> {{ error }}
+        <strong>{{ _('Error:') }}</strong> {{ error }}
     </div>
     {% endif %}
 
     <div class="card">
-        <h2>Upcoming Classes (Next 7 days)</h2>
+        <h2>{{ _('Upcoming Classes (Next 7 days)') }}</h2>
 
         {% if reservations %}
         <div class="bookings-table-wrapper">
             <table class="bookings-table">
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Class</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th>{{ _('Date') }}</th>
+                        <th>{{ _('Time') }}</th>
+                        <th>{{ _('Class') }}</th>
+                        <th>{{ _('Status') }}</th>
+                        <th>{{ _('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -47,10 +47,10 @@
                         </td>
                         <td class="actions">
                             {% if res.can_cancel and res.booking_id %}
-                            <form method="POST" action="{{ url_for('booking.cancel_reservation', class_id=res.id, booking_id=res.booking_id) }}" class="inline-form" onsubmit="return confirm('Cancel this reservation on WodBuster?')">
+                            <form method="POST" action="{{ url_for('booking.cancel_reservation', class_id=res.id, booking_id=res.booking_id) }}" class="inline-form" onsubmit="return confirm('{{ _('Cancel this reservation on WodBuster?') }}')">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-sm btn-danger" title="Cancel reservation">
-                                    Cancel
+                                <button type="submit" class="btn btn-sm btn-danger" title="{{ _('Cancel reservation') }}">
+                                    {{ _('Cancel') }}
                                 </button>
                             </form>
                             {% else %}
@@ -64,17 +64,17 @@
         </div>
         {% else %}
         <div class="empty-state">
-            <p>No upcoming reservations found.</p>
-            <p class="text-muted">Book a class from the dashboard or directly on WodBuster.</p>
+            <p>{{ _('No upcoming reservations found.') }}</p>
+            <p class="text-muted">{{ _('Book a class from the dashboard or directly on WodBuster.') }}</p>
         </div>
         {% endif %}
     </div>
 
     <div class="card">
-        <h2>Information</h2>
+        <h2>{{ _('Information') }}</h2>
         <p class="text-muted">
-            This page shows your upcoming reservations on WodBuster for the next 7 days.
-            You can cancel reservations directly from here.
+            {{ _('This page shows your upcoming reservations on WodBuster for the next 7 days.') }}
+            {{ _('You can cancel reservations directly from here.') }}
         </p>
     </div>
 </div>

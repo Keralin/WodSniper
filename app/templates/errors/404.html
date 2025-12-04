@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}404 - Page Not Found{% endblock %}
+{% block title %}404 - {{ _('Page Not Found') }}{% endblock %}
 
 {% block content %}
 <div class="error-page">
     <h1>404</h1>
-    <p>Page not found</p>
-    <a href="{{ url_for('booking.index') }}" class="btn btn-primary">Go Home</a>
+    <p>{{ _('Page not found') }}</p>
+    <a href="{{ url_for('booking.index') }}" class="btn btn-primary">{{ _('Go Home') }}</a>
 </div>
 {% endblock %}

@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Booking History - WodSniper{% endblock %}
+{% block title %}{{ _('Booking History') }} - WodSniper{% endblock %}
 
 {% block content %}
 <div class="dashboard">
     <div class="dashboard-header">
-        <h1>Booking History</h1>
-        <a href="{{ url_for('booking.dashboard') }}" class="btn btn-outline">Back</a>
+        <h1>{{ _('Booking History') }}</h1>
+        <a href="{{ url_for('booking.dashboard') }}" class="btn btn-outline">{{ _('Back') }}</a>
     </div>
 
     <div class="card">
@@ -15,23 +15,23 @@
         <div class="booking-stats">
             <div class="stat">
                 <span class="stat-value">{{ booking.success_count }}</span>
-                <span class="stat-label">Successful</span>
+                <span class="stat-label">{{ _('Successful') }}</span>
             </div>
             <div class="stat">
                 <span class="stat-value">{{ booking.fail_count }}</span>
-                <span class="stat-label">Failed</span>
+                <span class="stat-label">{{ _('Failed') }}</span>
             </div>
             <div class="stat">
                 <span class="stat-value {% if booking.is_active %}active{% else %}inactive{% endif %}">
-                    {% if booking.is_active %}Active{% else %}Inactive{% endif %}
+                    {% if booking.is_active %}{{ _('Active') }}{% else %}{{ _('Inactive') }}{% endif %}
                 </span>
-                <span class="stat-label">Status</span>
+                <span class="stat-label">{{ _('Status') }}</span>
             </div>
         </div>
     </div>
 
     <div class="card">
-        <h2>Recent Attempts</h2>
+        <h2>{{ _('Recent Attempts') }}</h2>
 
         {% if logs %}
         <div class="logs-list">
@@ -39,9 +39,9 @@
             <div class="log-item log-{{ log.status }}">
                 <div class="log-header">
                     <span class="status-badge status-{{ log.status }}">
-                        {% if log.status == 'success' %}Successful
-                        {% elif log.status == 'failed' %}Failed
-                        {% elif log.status == 'waiting' %}Waiting
+                        {% if log.status == 'success' %}{{ _('Successful') }}
+                        {% elif log.status == 'failed' %}{{ _('Failed') }}
+                        {% elif log.status == 'waiting' %}{{ _('Waiting') }}
                         {% else %}{{ log.status }}
                         {% endif %}
                     </span>
@@ -51,14 +51,14 @@
                 <p class="log-message">{{ log.message }}</p>
                 {% endif %}
                 {% if log.target_date %}
-                <p class="log-target">Target date: {{ log.target_date.strftime('%d/%m/%Y') }}</p>
+                <p class="log-target">{{ _('Target date:') }} {{ log.target_date.strftime('%d/%m/%Y') }}</p>
                 {% endif %}
             </div>
             {% endfor %}
         </div>
         {% else %}
         <div class="empty-state">
-            <p>No attempts recorded yet.</p>
+            <p>{{ _('No attempts recorded yet.') }}</p>
         </div>
         {% endif %}
     </div>

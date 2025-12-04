@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Sign Up - WodSniper{% endblock %}
+{% block title %}{{ _('Sign Up') }} - WodSniper{% endblock %}
 
 {% block content %}
 <div class="auth-container">
     <div class="auth-card">
-        <h2>Create Account</h2>
+        <h2>{{ _('Create Account') }}</h2>
 
         <form method="POST" class="form">
             {{ form.hidden_tag() }}
@@ -40,7 +40,7 @@
         </form>
 
         <p class="auth-footer">
-            Already have an account? <a href="{{ url_for('auth.login') }}">Sign In</a>
+            {{ _('Already have an account?') }} <a href="{{ url_for('auth.login') }}">{{ _('Sign In') }}</a>
         </p>
     </div>
 </div>
