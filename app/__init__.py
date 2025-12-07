@@ -69,7 +69,26 @@ def create_app(config_name=None):
     with app.app_context():
         db.create_all()
 
+    # Initialize scheduler (only once, gunicorn uses --preload)
+    _init_scheduler_once(app)
+
     return app
+
+
+# Global flag to prevent scheduler from being initialized multiple times
+_scheduler_initialized = False
+
+
+def _init_scheduler_once(app):
+    """Initialize scheduler only once (important for gunicorn with multiple workers)."""
+    global _scheduler_initialized
+    if _scheduler_initialized:
+        return
+
+    from app.scheduler import init_scheduler
+    with app.app_context():
+        init_scheduler(app)
+    _scheduler_initialized = True
 
 
 def register_error_handlers(app):

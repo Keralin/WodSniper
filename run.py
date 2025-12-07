@@ -5,7 +5,7 @@ import os
 import sys
 import logging
 from app import create_app
-from app.scheduler import init_scheduler, shutdown_scheduler
+from app.scheduler import shutdown_scheduler
 
 # Configure logging to stdout (Railway treats stderr as errors)
 logging.basicConfig(
@@ -21,9 +21,8 @@ logging.getLogger('apscheduler').setLevel(logging.DEBUG)
 
 app = create_app()
 
-# Initialize scheduler
-with app.app_context():
-    init_scheduler(app)
+# Note: scheduler is initialized in create_app() via _init_scheduler_once()
+# This prevents duplicate initialization in both dev (run.py) and prod (gunicorn)
 
 
 @app.teardown_appcontext

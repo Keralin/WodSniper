@@ -19,20 +19,20 @@ BOOKING_INTERVAL = 0.5  # Minimum seconds between bookings
 def init_scheduler(app):
     """Initialize the scheduler with the Flask app context."""
 
-    # Pre-refresh sessions at 12:50 (10 mins before booking window opens)
+    # Pre-refresh sessions at 13:50 (10 mins before booking window opens)
     # This ensures fresh cookies are ready before the critical booking time
     scheduler.add_job(
         func=lambda: refresh_all_sessions(app),
-        trigger=CronTrigger(day_of_week='sun', hour=12, minute=50),
+        trigger=CronTrigger(day_of_week='sun', hour=13, minute=50),
         id='session_refresh',
         name='Pre-Booking Session Refresh',
         replace_existing=True
     )
 
-    # Run booking check every Sunday at 12:55 (5 mins before 13:00 opening)
+    # Run booking check every Sunday at 13:55 (5 mins before 14:00 opening)
     scheduler.add_job(
         func=lambda: run_scheduled_bookings(app),
-        trigger=CronTrigger(day_of_week='sun', hour=12, minute=55),
+        trigger=CronTrigger(day_of_week='sun', hour=13, minute=55),
         id='weekly_booking_check',
         name='Weekly Booking Check',
         replace_existing=True
@@ -139,13 +139,13 @@ def run_scheduled_bookings(app):
 
         logger.info(f'Found {len(bookings)} active bookings')
 
-        # Wait until exactly 13:00
+        # Wait until exactly 14:00
         now = datetime.now()
-        target_time = now.replace(hour=13, minute=0, second=0, microsecond=0)
+        target_time = now.replace(hour=14, minute=0, second=0, microsecond=0)
 
         if now < target_time:
             wait_seconds = (target_time - now).total_seconds()
-            logger.info(f'Waiting {wait_seconds:.1f} seconds until 13:00...')
+            logger.info(f'Waiting {wait_seconds:.1f} seconds until 14:00...')
             time.sleep(max(0, wait_seconds - 1))  # Wake up 1 second early
 
             # Precise wait for the last second
