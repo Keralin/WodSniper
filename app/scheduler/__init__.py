@@ -14,6 +14,8 @@ scheduler = BackgroundScheduler()
 _booking_lock = threading.Lock()
 _last_booking_time = None
 BOOKING_INTERVAL = 0.5  # Minimum seconds between bookings
+MAX_RETRY_ATTEMPTS = 3  # Maximum retry attempts per booking
+RETRY_DELAY = 2  # Seconds between retry attempts
 
 
 def init_scheduler(app):
@@ -188,7 +190,7 @@ def run_scheduled_bookings(app):
 
 def _process_single_booking(booking, app):
     """
-    Process a single booking.
+    Process a single booking with retry logic.
 
     Returns:
         dict: Result with status, booking info, and message for email notification
@@ -203,79 +205,103 @@ def _process_single_booking(booking, app):
     logger.info(f'Processing booking {booking.id}: {booking.day_name} {booking.time} {booking.class_type} (user: {user.email})')
     target_date = None
     message = ''
+    last_error = None
 
-    try:
-        client = WodBusterClient(user.box_url)
-        cookies = user.get_wodbuster_cookies()
-        session_valid = False
+    # Calculate target date
+    today = datetime.now()
+    days_ahead = booking.day_of_week - today.weekday()
+    if days_ahead <= 0:
+        days_ahead += 7
+    target_date = today + timedelta(days=days_ahead)
 
-        # Try to restore session with existing cookies
-        if cookies:
-            session_valid = client.restore_session(cookies)
+    # Retry loop
+    for attempt in range(1, MAX_RETRY_ATTEMPTS + 1):
+        try:
+            logger.info(f'Attempt {attempt}/{MAX_RETRY_ATTEMPTS} for booking {booking.id}')
 
-        # If session expired, try re-login with stored credentials
-        if not session_valid:
-            logger.info(f'Session expired for {user.email}, attempting re-login...')
-            wodbuster_password = user.get_wodbuster_password()
+            client = WodBusterClient(user.box_url)
+            cookies = user.get_wodbuster_cookies()
+            session_valid = False
 
-            if wodbuster_password and user.wodbuster_email:
-                try:
-                    client.login(user.wodbuster_email, wodbuster_password)
-                    # Save new cookies for future use
-                    user.set_wodbuster_cookies(client.get_cookies())
-                    db.session.commit()
-                    logger.info(f'Re-login successful for {user.email}')
-                    session_valid = True
-                except LoginError as e:
-                    logger.error(f'Re-login failed for {user.email}: {e}')
-                    raise SessionExpiredError(f'Session expired and re-login failed: {e}')
+            # Try to restore session with existing cookies
+            if cookies:
+                session_valid = client.restore_session(cookies)
+
+            # If session expired, try re-login with stored credentials
+            if not session_valid:
+                logger.info(f'Session expired for {user.email}, attempting re-login...')
+                wodbuster_password = user.get_wodbuster_password()
+
+                if wodbuster_password and user.wodbuster_email:
+                    try:
+                        client.login(user.wodbuster_email, wodbuster_password)
+                        # Save new cookies for future use
+                        user.set_wodbuster_cookies(client.get_cookies())
+                        db.session.commit()
+                        logger.info(f'Re-login successful for {user.email}')
+                        session_valid = True
+                    except LoginError as e:
+                        logger.error(f'Re-login failed for {user.email}: {e}')
+                        raise SessionExpiredError(f'Session expired and re-login failed: {e}')
+                else:
+                    raise SessionExpiredError('Session expired and no credentials stored for re-login')
+
+            # Find and book the class
+            logger.debug(f'Searching for class: {booking.class_type} at {booking.time} on {target_date.strftime("%Y-%m-%d")}')
+            cls = client.find_class(target_date, booking.time, booking.class_type)
+
+            if not cls:
+                raise ClassNotFoundError(f'Class not found: {booking.class_type} at {booking.time}')
+
+            logger.debug(f'Found class: {cls}')
+
+            if client.book_class(cls['id']):
+                booking.status = 'success'
+                booking.success_count += 1
+                booking.last_error = None
+                message = f'Booked: {cls["name"]} on {target_date.strftime("%d/%m")}'
+                if attempt > 1:
+                    message += f' (attempt {attempt})'
+                logger.info(message)
+                break  # Success - exit retry loop
             else:
-                raise SessionExpiredError('Session expired and no credentials stored for re-login')
+                raise BookingError('Booking returned false')
 
-        # Calculate target date
-        today = datetime.now()
-        days_ahead = booking.day_of_week - today.weekday()
-        if days_ahead <= 0:
-            days_ahead += 7
-        target_date = today + timedelta(days=days_ahead)
+        except ClassFullError as e:
+            # Don't retry if class is full - no point
+            booking.status = 'waiting'
+            booking.last_error = str(e)
+            message = 'Class is full - added to waitlist'
+            logger.warning(f'Class full for booking {booking.id}, not retrying')
+            break  # Exit retry loop
 
-        # Find and book the class
-        logger.debug(f'Searching for class: {booking.class_type} at {booking.time} on {target_date.strftime("%Y-%m-%d")}')
-        cls = client.find_class(target_date, booking.time, booking.class_type)
+        except (SessionExpiredError, ClassNotFoundError, BookingError, RateLimitError) as e:
+            last_error = str(e)
+            logger.warning(f'Attempt {attempt} failed for booking {booking.id}: {e}')
 
-        if not cls:
-            raise ClassNotFoundError(f'Class not found: {booking.class_type} at {booking.time}')
+            if attempt < MAX_RETRY_ATTEMPTS:
+                logger.info(f'Retrying in {RETRY_DELAY} seconds...')
+                time.sleep(RETRY_DELAY)
+            else:
+                # Final attempt failed
+                booking.status = 'failed'
+                booking.fail_count += 1
+                booking.last_error = last_error
+                message = f'{last_error} (after {MAX_RETRY_ATTEMPTS} attempts)'
+                logger.error(f'Booking {booking.id} failed after {MAX_RETRY_ATTEMPTS} attempts')
 
-        logger.debug(f'Found class: {cls}')
+        except Exception as e:
+            last_error = str(e)
+            logger.exception(f'Unexpected error on attempt {attempt} for booking {booking.id}')
 
-        if client.book_class(cls['id']):
-            booking.status = 'success'
-            booking.success_count += 1
-            booking.last_error = None
-            message = f'Booked: {cls["name"]} on {target_date.strftime("%d/%m")}'
-            logger.info(message)
-        else:
-            raise BookingError('Booking returned false')
-
-    except ClassFullError as e:
-        booking.status = 'waiting'
-        booking.last_error = str(e)
-        message = 'Class is full - added to waitlist'
-        logger.warning(f'Class full for booking {booking.id}')
-
-    except (SessionExpiredError, ClassNotFoundError, BookingError, RateLimitError) as e:
-        booking.status = 'failed'
-        booking.fail_count += 1
-        booking.last_error = str(e)
-        message = str(e)
-        logger.error(f'Booking {booking.id} failed: {e}')
-
-    except Exception as e:
-        booking.status = 'failed'
-        booking.fail_count += 1
-        booking.last_error = str(e)
-        message = str(e)
-        logger.exception(f'Unexpected error for booking {booking.id}')
+            if attempt < MAX_RETRY_ATTEMPTS:
+                logger.info(f'Retrying in {RETRY_DELAY} seconds...')
+                time.sleep(RETRY_DELAY)
+            else:
+                booking.status = 'failed'
+                booking.fail_count += 1
+                booking.last_error = last_error
+                message = f'{last_error} (after {MAX_RETRY_ATTEMPTS} attempts)'
 
     # Update booking
     booking.last_attempt = datetime.utcnow()
