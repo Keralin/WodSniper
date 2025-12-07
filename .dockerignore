@@ -1,0 +1,70 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+*.manifest
+*.spec
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Documentation
+docs/
+*.md
+!requirements.txt
+
+# Local data
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Misc
+.DS_Store
+Thumbs.db
+*.log
+tmp/
+temp/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Claude
+.claude/
+CLAUDE.md
+TODO.md
