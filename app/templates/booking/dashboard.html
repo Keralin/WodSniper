@@ -52,14 +52,14 @@
                 <tbody>
                     {% for booking in bookings %}
                     <tr class="{% if not booking.is_active %}inactive{% endif %}">
-                        <td>
+                        <td data-label="{{ _('Day') }}">
                             <span class="day-badge day-{{ booking.day_of_week }}">
                                 {{ booking.day_name }}
                             </span>
                         </td>
-                        <td>{{ booking.time }}</td>
-                        <td>{{ booking.class_type }}</td>
-                        <td>
+                        <td data-label="{{ _('Time') }}">{{ booking.time }}</td>
+                        <td data-label="{{ _('Class') }}">{{ booking.class_type }}</td>
+                        <td data-label="{{ _('Status') }}">
                             <span class="status-badge status-{{ booking.status }}">
                                 {% if booking.status == 'pending' %}{{ _('Pending') }}
                                 {% elif booking.status == 'success' %}{{ _('Booked') }}
@@ -69,14 +69,14 @@
                                 {% endif %}
                             </span>
                         </td>
-                        <td>
+                        <td data-label="{{ _('Last Booking') }}">
                             {% if booking.last_attempt %}
                                 {{ booking.last_attempt.strftime('%d/%m %H:%M') }}
                             {% else %}
                                 -
                             {% endif %}
                         </td>
-                        <td class="actions">
+                        <td class="actions" data-label="">
                             <form method="POST" action="{{ url_for('booking.book_now', booking_id=booking.id) }}" class="inline-form">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-sm btn-primary" title="{{ _('Book now') }}">
