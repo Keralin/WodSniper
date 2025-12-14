@@ -396,6 +396,22 @@ def toggle_notifications():
     return redirect(url_for('booking.dashboard'))
 
 
+@booking_bp.route('/test-email', methods=['POST'])
+@login_required
+def test_email():
+    """Send a test email to verify email configuration."""
+    from app.email import send_test_email
+
+    success, message = send_test_email(current_user)
+
+    if success:
+        flash(f'Test email sent to {current_user.email}. Check your inbox!', 'success')
+    else:
+        flash(f'Failed to send test email: {message}', 'error')
+
+    return redirect(url_for('booking.dashboard'))
+
+
 @booking_bp.route('/debug-account')
 @login_required
 def debug_account():

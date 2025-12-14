@@ -87,6 +87,9 @@ msgstr "Not connected"
 msgid "Email notifications"
 msgstr "Email notifications"
 
+msgid "Send test email"
+msgstr "Send test email"
+
 msgid "Scheduled Bookings"
 msgstr "Scheduled Bookings"
 

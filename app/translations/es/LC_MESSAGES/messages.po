@@ -87,6 +87,9 @@ msgstr "No conectado"
 msgid "Email notifications"
 msgstr "Notificaciones por email"
 
+msgid "Send test email"
+msgstr "Enviar email de prueba"
+
 msgid "Scheduled Bookings"
 msgstr "Reservas Programadas"
 

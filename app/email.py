@@ -1,15 +1,53 @@
-"""Email notification service for WodSniper."""
+"""Email notification service for WodSniper using Resend."""
 
 import logging
 from typing import List, Dict, Any
 from datetime import datetime
 
 from flask import current_app, render_template_string
-from flask_mail import Message
-
-from app import mail
+import resend
 
 logger = logging.getLogger(__name__)
+
+
+def _get_email_config():
+    """Get email configuration and check if Resend is configured."""
+    api_key = current_app.config.get('RESEND_API_KEY')
+    from_email = current_app.config.get('RESEND_FROM_EMAIL', 'WodSniper <onboarding@resend.dev>')
+    return api_key, from_email
+
+
+def _send_with_resend(to_email: str, subject: str, html_body: str) -> bool:
+    """Send email using Resend API."""
+    api_key, from_email = _get_email_config()
+
+    if not api_key:
+        logger.error('RESEND_API_KEY not configured')
+        return False
+
+    try:
+        resend.api_key = api_key
+
+        logger.info(f'Sending email via Resend to {to_email}')
+        logger.debug(f'From: {from_email}, Subject: {subject}')
+
+        params = {
+            "from": from_email,
+            "to": [to_email],
+            "subject": subject,
+            "html": html_body
+        }
+
+        response = resend.Emails.send(params)
+        logger.info(f'Email sent successfully via Resend. ID: {response.get("id", "unknown")}')
+        return True
+
+    except resend.exceptions.ResendError as e:
+        logger.error(f'Resend API error: {e}')
+        return False
+    except Exception as e:
+        logger.exception(f'Unexpected error sending email via Resend: {e}')
+        return False
 
 
 def send_booking_summary(user, results: List[Dict[str, Any]]):
@@ -24,8 +62,9 @@ def send_booking_summary(user, results: List[Dict[str, Any]]):
         logger.info(f'Email notifications disabled for user {user.email}')
         return False
 
-    if not current_app.config.get('MAIL_USERNAME'):
-        logger.warning('Email not configured (MAIL_USERNAME not set)')
+    api_key, _ = _get_email_config()
+    if not api_key:
+        logger.warning('Email not configured (RESEND_API_KEY not set)')
         return False
 
     if not results:
@@ -43,30 +82,23 @@ def send_booking_summary(user, results: List[Dict[str, Any]]):
 
     if success_count == total:
         subject = f'WodSniper: {success_count} classes booked successfully!'
-        emoji = ''
     elif success_count > 0:
         subject = f'WodSniper: {success_count}/{total} classes booked'
-        emoji = ''
     else:
         subject = f'WodSniper: Booking issues - action needed'
-        emoji = ''
 
     # Render email body
     html_body = render_booking_email(user, successful, failed, waiting)
 
-    try:
-        msg = Message(
-            subject=subject,
-            recipients=[user.email],
-            html=html_body
-        )
-        mail.send(msg)
-        logger.info(f'Booking summary email sent to {user.email}')
-        return True
+    # Send via Resend
+    success = _send_with_resend(user.email, subject, html_body)
 
-    except Exception as e:
-        logger.error(f'Failed to send email to {user.email}: {e}')
-        return False
+    if success:
+        logger.info(f'Booking summary email sent successfully to {user.email}')
+    else:
+        logger.error(f'Failed to send booking summary email to {user.email}')
+
+    return success
 
 
 def render_booking_email(user, successful, failed, waiting):
@@ -170,23 +202,27 @@ def render_booking_email(user, successful, failed, waiting):
 
 
 def send_test_email(user):
-    """Send a test email to verify configuration."""
-    if not current_app.config.get('MAIL_USERNAME'):
-        return False, 'Email not configured (MAIL_USERNAME not set)'
+    """Send a test email to verify Resend configuration."""
+    logger.info(f'Test email requested for {user.email}')
 
-    try:
-        msg = Message(
-            subject='WodSniper: Test Email',
-            recipients=[user.email],
-            html=f"""
-            <h2>Test Email from WodSniper</h2>
-            <p>If you received this email, your notifications are working correctly!</p>
-            <p>Sent at: {datetime.now().strftime('%d/%m/%Y %H:%M')}</p>
-            """
-        )
-        mail.send(msg)
-        return True, 'Test email sent successfully'
+    api_key, from_email = _get_email_config()
 
-    except Exception as e:
-        logger.error(f'Failed to send test email: {e}')
-        return False, str(e)
+    if not api_key:
+        logger.warning('RESEND_API_KEY not configured')
+        return False, 'Email not configured (RESEND_API_KEY not set)'
+
+    logger.info(f'Using Resend with from_email: {from_email}')
+
+    html_body = f"""
+    <h2>Test Email from WodSniper</h2>
+    <p>If you received this email, your notifications are working correctly!</p>
+    <p>Sent at: {datetime.now().strftime('%d/%m/%Y %H:%M')}</p>
+    <p><small>Sent via Resend</small></p>
+    """
+
+    success = _send_with_resend(user.email, 'WodSniper: Test Email', html_body)
+
+    if success:
+        return True, 'Test email sent successfully via Resend'
+    else:
+        return False, 'Failed to send email via Resend. Check logs for details.'

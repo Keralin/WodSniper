@@ -27,14 +27,9 @@ class Config:
     BABEL_DEFAULT_LOCALE = 'es'
     BABEL_DEFAULT_TIMEZONE = 'Europe/Madrid'
 
-    # Email settings (Flask-Mail)
-    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
-    MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
-    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() == 'true'
-    MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', 'false').lower() == 'true'
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'WodSniper <noreply@wodsniper.com>')
+    # Email settings (Resend)
+    RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
+    RESEND_FROM_EMAIL = os.environ.get('RESEND_FROM_EMAIL', 'WodSniper <onboarding@resend.dev>')
 
 
 class DevelopmentConfig(Config):
