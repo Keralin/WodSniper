@@ -8,6 +8,22 @@ from app.models import db, Booking, BookingLog
 from app.scraper import WodBusterClient, SessionExpiredError
 
 
+def _group_classes_by_time(classes):
+    """Group classes by time slot, collecting unique class names per slot."""
+    time_slots = {}
+    for cls in classes:
+        time = cls.get('time', '')[:5]  # HH:MM format
+        name = cls.get('name', '')
+
+        if time not in time_slots:
+            time_slots[time] = []
+
+        if name and name not in time_slots[time]:
+            time_slots[time].append(name)
+
+    return time_slots
+
+
 @booking_bp.route('/')
 def index():
     """Landing page."""
@@ -203,6 +219,9 @@ def get_classes_by_day(day_of_week):
 
         classes = client.get_classes(target_date)
         is_reference = False
+        is_special_day = False
+        reference_slots = None
+        reference_date = None
 
         # If no classes found (schedule not published yet), try last week's same day
         if not classes:
@@ -210,18 +229,24 @@ def get_classes_by_day(day_of_week):
             classes = client.get_classes(past_date)
             is_reference = True
             target_date = past_date
+        else:
+            # Check if this might be a special/holiday schedule (few classes)
+            # Threshold: if <= 4 unique time slots, it's likely a special day
+            unique_times = set(cls.get('time', '')[:5] for cls in classes if cls.get('time'))
+            if len(unique_times) <= 4:
+                # Fetch last week's schedule as reference for typical day
+                past_date = today + timedelta(days=days_ahead - 7)
+                reference_classes = client.get_classes(past_date)
+                reference_unique_times = set(cls.get('time', '')[:5] for cls in reference_classes if cls.get('time'))
+
+                # If last week had more classes, include it as reference
+                if len(reference_unique_times) > len(unique_times):
+                    is_special_day = True
+                    reference_date = past_date
+                    reference_slots = _group_classes_by_time(reference_classes)
 
         # Group classes by time, then by class type
-        time_slots = {}
-        for cls in classes:
-            time = cls.get('time', '')[:5]  # HH:MM format
-            name = cls.get('name', '')
-
-            if time not in time_slots:
-                time_slots[time] = []
-
-            if name and name not in time_slots[time]:
-                time_slots[time].append(name)
+        time_slots = _group_classes_by_time(classes)
 
         # Sort and format response
         result = []
@@ -232,14 +257,30 @@ def get_classes_by_day(day_of_week):
             })
 
         day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-        return jsonify({
+        response_data = {
             'date': target_date.strftime('%Y-%m-%d'),
             'date_display': target_date.strftime('%d/%m/%Y'),
             'day_name': day_names[day_of_week],
             'is_reference': is_reference,
             'reference_note': 'Schedule based on last week (next week not published yet)' if is_reference else None,
             'slots': result
-        })
+        }
+
+        # Include typical schedule if this is a special day
+        if is_special_day and reference_slots:
+            reference_result = []
+            for time in sorted(reference_slots.keys()):
+                reference_result.append({
+                    'time': time,
+                    'classes': sorted(reference_slots[time])
+                })
+            response_data['is_special_day'] = True
+            response_data['special_day_note'] = f'This day appears to have a reduced schedule ({len(result)} time slots vs {len(reference_result)} typical)'
+            response_data['typical_slots'] = reference_result
+            response_data['typical_date'] = reference_date.strftime('%Y-%m-%d')
+            response_data['typical_date_display'] = reference_date.strftime('%d/%m/%Y')
+
+        return jsonify(response_data)
 
     except SessionExpiredError:
         return jsonify({'error': 'Session expired. Please reconnect WodBuster.'}), 401

@@ -30,6 +30,21 @@
                 {% endfor %}
             </div>
 
+            <div class="form-group" id="schedule-toggle-group" style="display: none;">
+                <label>{{ _('Schedule Type') }}</label>
+                <div class="schedule-toggle">
+                    <button type="button" class="schedule-btn active" id="btn-special" data-schedule="special">
+                        <span class="schedule-btn-icon">📅</span>
+                        <span class="schedule-btn-label" id="label-special">{{ _('This week') }}</span>
+                    </button>
+                    <button type="button" class="schedule-btn" id="btn-typical" data-schedule="typical">
+                        <span class="schedule-btn-icon">📆</span>
+                        <span class="schedule-btn-label" id="label-typical">{{ _('Typical schedule') }}</span>
+                    </button>
+                </div>
+                <span class="form-hint schedule-warning" id="schedule-warning"></span>
+            </div>
+
             <div class="form-group">
                 <label for="time">{{ _('Time') }}</label>
                 <select name="time" id="time" class="form-control" required disabled>
@@ -65,6 +80,44 @@
     </div>
 </div>
 
+<style>
+.schedule-toggle {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.schedule-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.75rem;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.schedule-btn:hover {
+    border-color: var(--primary);
+}
+.schedule-btn.active {
+    border-color: var(--primary);
+    background: var(--primary-bg);
+}
+.schedule-btn-icon {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+}
+.schedule-btn-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+.schedule-warning {
+    color: #e9c46a !important;
+    font-weight: 500;
+}
+</style>
 <script>
 (function() {
     const daySelect = document.getElementById('day_of_week');
@@ -73,6 +126,12 @@
     const submitBtn = document.getElementById('submit-btn');
     const timeHint = document.getElementById('time-hint');
     const classHint = document.getElementById('class-hint');
+    const scheduleToggleGroup = document.getElementById('schedule-toggle-group');
+    const btnSpecial = document.getElementById('btn-special');
+    const btnTypical = document.getElementById('btn-typical');
+    const labelSpecial = document.getElementById('label-special');
+    const labelTypical = document.getElementById('label-typical');
+    const scheduleWarning = document.getElementById('schedule-warning');
 
     // Translated strings
     const i18n = {
@@ -91,21 +150,83 @@
         referenceSchedule: '{{ _("Reference schedule") }}',
         basedOnLast: '{{ _("based on last") }}',
         classes: '{{ _("classes") }}',
-        classTypesAvailable: '{{ _("class type(s) available at") }}'
+        classTypesAvailable: '{{ _("class type(s) available at") }}',
+        thisWeek: '{{ _("This week") }}',
+        typicalSchedule: '{{ _("Typical schedule") }}',
+        specialDayWarning: '{{ _("This week has a reduced schedule. Use Typical to see normal classes.") }}',
+        timeSlots: '{{ _("time slots") }}'
     };
 
-    let classData = {}; // Store classes by time
+    let classData = {}; // Store classes by time for current selection
+    let specialDaySlots = null; // Store special day slots
+    let typicalSlots = null; // Store typical schedule slots
+    let currentScheduleType = 'special'; // Which schedule is currently shown
+    let apiData = null; // Store full API response
+
+    function populateTimeSelect(slots, dateDisplay) {
+        classData = {};
+        timeSelect.innerHTML = '<option value="">' + i18n.selectTime + '</option>';
+
+        if (!slots || slots.length === 0) {
+            timeSelect.innerHTML = '<option value="">' + i18n.noClasses + '</option>';
+            timeHint.textContent = i18n.noClassesDay;
+            timeSelect.disabled = true;
+            return;
+        }
+
+        slots.forEach(slot => {
+            classData[slot.time] = slot.classes;
+            const option = document.createElement('option');
+            option.value = slot.time;
+            option.textContent = slot.time + ' (' + slot.classes.length + ' ' + i18n.classes + ')';
+            timeSelect.appendChild(option);
+        });
+
+        timeSelect.disabled = false;
+        timeHint.textContent = i18n.classesFor + ' ' + dateDisplay;
+
+        // Reset class select
+        classSelect.innerHTML = '<option value="">' + i18n.selectTimeFirst + '</option>';
+        classSelect.disabled = true;
+        submitBtn.disabled = true;
+    }
+
+    function switchSchedule(scheduleType) {
+        currentScheduleType = scheduleType;
+
+        // Update button states
+        btnSpecial.classList.toggle('active', scheduleType === 'special');
+        btnTypical.classList.toggle('active', scheduleType === 'typical');
+
+        // Populate with correct data
+        if (scheduleType === 'special' && specialDaySlots) {
+            populateTimeSelect(specialDaySlots, apiData.date_display);
+        } else if (scheduleType === 'typical' && typicalSlots) {
+            populateTimeSelect(typicalSlots, apiData.typical_date_display);
+        }
+    }
+
+    // Schedule toggle button handlers
+    btnSpecial.addEventListener('click', () => switchSchedule('special'));
+    btnTypical.addEventListener('click', () => switchSchedule('typical'));
 
     daySelect.addEventListener('change', function() {
         const day = this.value;
 
-        // Reset downstream selects
+        // Reset everything
         timeSelect.innerHTML = '<option value="">' + i18n.loading + '</option>';
         timeSelect.disabled = true;
         classSelect.innerHTML = '<option value="">' + i18n.selectTimeFirst + '</option>';
         classSelect.disabled = true;
         submitBtn.disabled = true;
         classData = {};
+        specialDaySlots = null;
+        typicalSlots = null;
+        apiData = null;
+        scheduleToggleGroup.style.display = 'none';
+        currentScheduleType = 'special';
+        btnSpecial.classList.add('active');
+        btnTypical.classList.remove('active');
 
         if (!day) {
             timeSelect.innerHTML = '<option value="">' + i18n.selectDayFirst + '</option>';
@@ -117,6 +238,8 @@
         fetch('/api/classes-by-day/' + day)
             .then(response => response.json())
             .then(data => {
+                apiData = data;
+
                 if (data.error) {
                     timeSelect.innerHTML = '<option value="">Error: ' + data.error + '</option>';
                     timeHint.textContent = i18n.errorLoading;
@@ -129,23 +252,29 @@
                     return;
                 }
 
-                // Store class data and populate time dropdown
-                timeSelect.innerHTML = '<option value="">' + i18n.selectTime + '</option>';
-                data.slots.forEach(slot => {
-                    classData[slot.time] = slot.classes;
-                    const option = document.createElement('option');
-                    option.value = slot.time;
-                    option.textContent = slot.time + ' (' + slot.classes.length + ' ' + i18n.classes + ')';
-                    timeSelect.appendChild(option);
-                });
+                // Check if this is a special day with both schedules available
+                if (data.is_special_day && data.typical_slots) {
+                    specialDaySlots = data.slots;
+                    typicalSlots = data.typical_slots;
 
-                timeSelect.disabled = false;
+                    // Update labels with slot counts
+                    labelSpecial.textContent = i18n.thisWeek + ' (' + data.slots.length + ' ' + i18n.timeSlots + ')';
+                    labelTypical.textContent = i18n.typicalSchedule + ' (' + data.typical_slots.length + ' ' + i18n.timeSlots + ')';
 
-                // Show reference note if using last week's schedule
-                if (data.is_reference) {
-                    timeHint.innerHTML = '<strong style="color: #e9c46a;">⚠ ' + i18n.referenceSchedule + '</strong> (' + i18n.basedOnLast + ' ' + data.day_name + ')';
+                    // Show warning and toggle
+                    scheduleWarning.textContent = i18n.specialDayWarning;
+                    scheduleToggleGroup.style.display = 'block';
+
+                    // Default to typical schedule since user probably wants the normal classes
+                    switchSchedule('typical');
                 } else {
-                    timeHint.textContent = i18n.classesFor + ' ' + data.date_display;
+                    // Normal day, just show the slots
+                    populateTimeSelect(data.slots, data.date_display);
+
+                    // Show reference note if using last week's schedule
+                    if (data.is_reference) {
+                        timeHint.innerHTML = '<strong style="color: #e9c46a;">⚠ ' + i18n.referenceSchedule + '</strong> (' + i18n.basedOnLast + ' ' + data.day_name + ')';
+                    }
                 }
             })
             .catch(err => {

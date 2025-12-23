@@ -413,6 +413,22 @@ msgstr "clases"
 msgid "class type(s) available at"
 msgstr "tipo(s) de clase disponible(s) a las"
 
+# Schedule type toggle (special days)
+msgid "Schedule Type"
+msgstr "Tipo de Horario"
+
+msgid "This week"
+msgstr "Esta semana"
+
+msgid "Typical schedule"
+msgstr "Horario habitual"
+
+msgid "This week has a reduced schedule. Use Typical to see normal classes."
+msgstr "Esta semana tiene un horario reducido. Usa Habitual para ver las clases normales."
+
+msgid "time slots"
+msgstr "franjas horarias"
+
 # Booking Logs
 msgid "Booking History"
 msgstr "Historial de Reservas"
