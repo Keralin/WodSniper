@@ -429,6 +429,12 @@ msgstr "Esta semana tiene un horario reducido. Usa Habitual para ver las clases 
 msgid "time slots"
 msgstr "franjas horarias"
 
+msgid "Typical schedule for"
+msgstr "Horario habitual de"
+
+msgid "Selected:"
+msgstr "Seleccionado:"
+
 # Booking Logs
 msgid "Booking History"
 msgstr "Historial de Reservas"

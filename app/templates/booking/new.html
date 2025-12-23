@@ -154,7 +154,9 @@
         thisWeek: '{{ _("This week") }}',
         typicalSchedule: '{{ _("Typical schedule") }}',
         specialDayWarning: '{{ _("This week has a reduced schedule. Use Typical to see normal classes.") }}',
-        timeSlots: '{{ _("time slots") }}'
+        timeSlots: '{{ _("time slots") }}',
+        typicalScheduleFor: '{{ _("Typical schedule for") }}',
+        selectedSchedule: '{{ _("Selected:") }}'
     };
 
     let classData = {}; // Store classes by time for current selection
@@ -163,7 +165,7 @@
     let currentScheduleType = 'special'; // Which schedule is currently shown
     let apiData = null; // Store full API response
 
-    function populateTimeSelect(slots, dateDisplay) {
+    function populateTimeSelect(slots, dateDisplay, isTypical) {
         classData = {};
         timeSelect.innerHTML = '<option value="">' + i18n.selectTime + '</option>';
 
@@ -183,7 +185,13 @@
         });
 
         timeSelect.disabled = false;
-        timeHint.textContent = i18n.classesFor + ' ' + dateDisplay;
+
+        // Show appropriate message based on schedule type
+        if (isTypical) {
+            timeHint.innerHTML = '<strong style="color: var(--primary);">' + i18n.typicalScheduleFor + ' ' + apiData.day_name + '</strong>';
+        } else {
+            timeHint.textContent = i18n.classesFor + ' ' + dateDisplay;
+        }
 
         // Reset class select
         classSelect.innerHTML = '<option value="">' + i18n.selectTimeFirst + '</option>';
@@ -198,11 +206,17 @@
         btnSpecial.classList.toggle('active', scheduleType === 'special');
         btnTypical.classList.toggle('active', scheduleType === 'typical');
 
+        // Update selected indicator
+        const selectedText = scheduleType === 'typical'
+            ? i18n.typicalSchedule + ' (' + typicalSlots.length + ' ' + i18n.timeSlots + ')'
+            : i18n.thisWeek + ' (' + specialDaySlots.length + ' ' + i18n.timeSlots + ')';
+        scheduleWarning.innerHTML = i18n.selectedSchedule + ' <strong>' + selectedText + '</strong>';
+
         // Populate with correct data
         if (scheduleType === 'special' && specialDaySlots) {
-            populateTimeSelect(specialDaySlots, apiData.date_display);
+            populateTimeSelect(specialDaySlots, apiData.date_display, false);
         } else if (scheduleType === 'typical' && typicalSlots) {
-            populateTimeSelect(typicalSlots, apiData.typical_date_display);
+            populateTimeSelect(typicalSlots, apiData.typical_date_display, true);
         }
     }
 
@@ -269,7 +283,7 @@
                     switchSchedule('typical');
                 } else {
                     // Normal day, just show the slots
-                    populateTimeSelect(data.slots, data.date_display);
+                    populateTimeSelect(data.slots, data.date_display, false);
 
                     // Show reference note if using last week's schedule
                     if (data.is_reference) {

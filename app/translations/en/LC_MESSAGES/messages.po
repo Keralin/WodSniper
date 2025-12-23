@@ -429,6 +429,12 @@ msgstr "This week has a reduced schedule. Use Typical to see normal classes."
 msgid "time slots"
 msgstr "time slots"
 
+msgid "Typical schedule for"
+msgstr "Typical schedule for"
+
+msgid "Selected:"
+msgstr "Selected:"
+
 # Booking Logs
 msgid "Booking History"
 msgstr "Booking History"
