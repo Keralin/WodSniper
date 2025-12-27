@@ -90,6 +90,27 @@ msgstr "Email notifications"
 msgid "Send test email"
 msgstr "Send test email"
 
+msgid "WodSniper: Test Email"
+msgstr "WodSniper: Test Email"
+
+msgid "Test Email from WodSniper"
+msgstr "Test Email from WodSniper"
+
+msgid "If you received this email, your notifications are working correctly!"
+msgstr "If you received this email, your notifications are working correctly!"
+
+msgid "Sent at"
+msgstr "Sent at"
+
+msgid "Email not configured"
+msgstr "Email not configured"
+
+msgid "Test email sent successfully"
+msgstr "Test email sent successfully"
+
+msgid "Failed to send email. Check logs for details."
+msgstr "Failed to send email. Check logs for details."
+
 msgid "Scheduled Bookings"
 msgstr "Scheduled Bookings"
 

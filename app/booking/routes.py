@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from flask import render_template, redirect, url_for, flash, jsonify, request, session
+from flask import render_template, redirect, url_for, flash, jsonify, request, session, current_app, abort
 from flask_login import login_required, current_user
 
 from app.booking import booking_bp
@@ -440,7 +440,10 @@ def toggle_notifications():
 @booking_bp.route('/test-email', methods=['POST'])
 @login_required
 def test_email():
-    """Send a test email to verify email configuration."""
+    """Send a test email to verify email configuration. Only works in debug mode."""
+    if not current_app.debug:
+        abort(404)
+
     from app.email import send_test_email
 
     success, message = send_test_email(current_user)
@@ -456,7 +459,10 @@ def test_email():
 @booking_bp.route('/debug-account')
 @login_required
 def debug_account():
-    """Debug: show raw account page HTML from WodBuster."""
+    """Debug: show raw account page HTML from WodBuster. Only works in debug mode."""
+    if not current_app.debug:
+        abort(404)
+
     if not current_user.box_url:
         return jsonify({'error': 'WodBuster not connected'}), 400
 

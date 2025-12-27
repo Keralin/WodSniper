@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, current_app, abort
 from flask_login import login_user, logout_user, login_required, current_user
 
 from app.auth import auth_bp
@@ -130,7 +130,10 @@ def test_connection():
 @auth_bp.route('/explore-endpoints')
 @login_required
 def explore_endpoints():
-    """Explore available WodBuster endpoints to find user stats."""
+    """Explore available WodBuster endpoints to find user stats. Only works in debug mode."""
+    if not current_app.debug:
+        abort(404)
+
     import json
     import time
 

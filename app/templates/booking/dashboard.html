@@ -158,12 +158,6 @@
                     <small>{{ _('Receive a summary after automatic bookings') }}</small>
                 </span>
             </form>
-            <form method="POST" action="{{ url_for('booking.test_email') }}" class="test-email-form" style="margin-top: 12px;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-secondary btn-sm">
-                    {{ _('Send test email') }}
-                </button>
-            </form>
         </div>
     </div>
 </div>

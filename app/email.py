@@ -203,26 +203,28 @@ def render_booking_email(user, successful, failed, waiting):
 
 def send_test_email(user):
     """Send a test email to verify Resend configuration."""
+    from flask_babel import gettext as _
+
     logger.info(f'Test email requested for {user.email}')
 
     api_key, from_email = _get_email_config()
 
     if not api_key:
         logger.warning('RESEND_API_KEY not configured')
-        return False, 'Email not configured (RESEND_API_KEY not set)'
+        return False, _('Email not configured')
 
     logger.info(f'Using Resend with from_email: {from_email}')
 
+    subject = _('WodSniper: Test Email')
     html_body = f"""
-    <h2>Test Email from WodSniper</h2>
-    <p>If you received this email, your notifications are working correctly!</p>
-    <p>Sent at: {datetime.now().strftime('%d/%m/%Y %H:%M')}</p>
-    <p><small>Sent via Resend</small></p>
+    <h2>{_('Test Email from WodSniper')}</h2>
+    <p>{_('If you received this email, your notifications are working correctly!')}</p>
+    <p>{_('Sent at')}: {datetime.now().strftime('%d/%m/%Y %H:%M')}</p>
     """
 
-    success = _send_with_resend(user.email, 'WodSniper: Test Email', html_body)
+    success = _send_with_resend(user.email, subject, html_body)
 
     if success:
-        return True, 'Test email sent successfully via Resend'
+        return True, _('Test email sent successfully')
     else:
-        return False, 'Failed to send email via Resend. Check logs for details.'
+        return False, _('Failed to send email. Check logs for details.')

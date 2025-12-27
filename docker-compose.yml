@@ -1,23 +1,95 @@
 version: '3.8'
 
 services:
-  wodsniper:
-    build: .
-    container_name: wodsniper
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: wodsniper-db
     restart: unless-stopped
-    ports:
-      - "5000:5000"
     environment:
-      - FLASK_ENV=production
-      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
-      - DATABASE_URL=sqlite:///data/wodsniper.db
+      POSTGRES_USER: ${POSTGRES_USER:-wodsniper}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wodsniper}
+      POSTGRES_DB: ${POSTGRES_DB:-wodsniper}
     volumes:
-      - wodsniper_data:/app/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/')"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wodsniper} -d ${POSTGRES_DB:-wodsniper}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wodsniper-network
+
+  # FlareSolverr - Cloudflare bypass proxy
+  # Only needed in production or when Cloudflare blocks cloudscraper
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: wodsniper-flaresolverr
+    restart: unless-stopped
+    environment:
+      LOG_LEVEL: info
+      LOG_HTML: "false"
+      CAPTCHA_SOLVER: none
+      TZ: Europe/Madrid
+    ports:
+      - "8191:8191"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8191/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+    networks:
+      - wodsniper-network
+    profiles:
+      - full  # Only starts with: docker compose --profile full up
+
+  # WodSniper Application
+  wodsniper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wodsniper-app
+    restart: unless-stopped
+    ports:
+      - "${PORT:-5000}:5000"
+    environment:
+      # Flask settings
+      FLASK_ENV: ${FLASK_ENV:-production}
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      PORT: 5000
+
+      # Database - connects to postgres service
+      DATABASE_URL: postgresql://${POSTGRES_USER:-wodsniper}:${POSTGRES_PASSWORD:-wodsniper}@postgres:5432/${POSTGRES_DB:-wodsniper}
+
+      # FlareSolverr - internal Docker network URL
+      # Comment out if not using FlareSolverr
+      FLARESOLVERR_URL: ${FLARESOLVERR_URL:-http://flaresolverr:8191/v1}
+
+      # Gunicorn settings (production only)
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-2}
+      GUNICORN_THREADS: ${GUNICORN_THREADS:-4}
+      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-120}
+
+      # Email settings (Resend)
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-WodSniper <onboarding@resend.dev>}
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - wodsniper-network
 
 volumes:
-  wodsniper_data:
+  postgres_data:
+    driver: local
+
+networks:
+  wodsniper-network:
+    driver: bridge
