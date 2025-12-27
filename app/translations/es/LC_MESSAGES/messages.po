@@ -503,6 +503,58 @@ msgstr "Esta página muestra tus próximas reservas en WodBuster para los próxi
 msgid "You can cancel reservations directly from here."
 msgstr "Puedes cancelar reservas directamente desde aquí."
 
+# Password Reset
+msgid "Forgot Password"
+msgstr "Olvidé mi Contraseña"
+
+msgid "Enter your email and we will send you a link to reset your password."
+msgstr "Introduce tu email y te enviaremos un enlace para restablecer tu contraseña."
+
+msgid "Send Reset Link"
+msgstr "Enviar Enlace"
+
+msgid "Back to Sign In"
+msgstr "Volver a Iniciar Sesión"
+
+msgid "If an account with that email exists, a password reset link has been sent."
+msgstr "Si existe una cuenta con ese email, se ha enviado un enlace para restablecer la contraseña."
+
+msgid "Reset Password"
+msgstr "Restablecer Contraseña"
+
+msgid "Enter your new password below."
+msgstr "Introduce tu nueva contraseña a continuación."
+
+msgid "New Password"
+msgstr "Nueva Contraseña"
+
+msgid "Invalid or expired reset link. Please request a new one."
+msgstr "Enlace inválido o expirado. Por favor, solicita uno nuevo."
+
+msgid "Your password has been reset. You can now log in."
+msgstr "Tu contraseña ha sido restablecida. Ya puedes iniciar sesión."
+
+msgid "WodSniper: Reset Your Password"
+msgstr "WodSniper: Restablece tu Contraseña"
+
+msgid "Reset Your Password"
+msgstr "Restablece tu Contraseña"
+
+msgid "We received a request to reset your password. Click the button below to create a new password:"
+msgstr "Hemos recibido una solicitud para restablecer tu contraseña. Haz clic en el botón para crear una nueva contraseña:"
+
+msgid "Note:"
+msgstr "Nota:"
+
+msgid "This link will expire in 1 hour. If you did not request a password reset, you can safely ignore this email."
+msgstr "Este enlace expirará en 1 hora. Si no solicitaste restablecer tu contraseña, puedes ignorar este email."
+
+msgid "Sent by WodSniper"
+msgstr "Enviado por WodSniper"
+
+msgid "Forgot password?"
+msgstr "¿Olvidaste tu contraseña?"
+
 # Errors
 msgid "Page Not Found"
 msgstr "Página No Encontrada"

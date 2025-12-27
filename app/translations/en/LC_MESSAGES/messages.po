@@ -503,6 +503,58 @@ msgstr "This page shows your upcoming reservations on WodBuster for the next 7 d
 msgid "You can cancel reservations directly from here."
 msgstr "You can cancel reservations directly from here."
 
+# Password Reset
+msgid "Forgot Password"
+msgstr "Forgot Password"
+
+msgid "Enter your email and we will send you a link to reset your password."
+msgstr "Enter your email and we will send you a link to reset your password."
+
+msgid "Send Reset Link"
+msgstr "Send Reset Link"
+
+msgid "Back to Sign In"
+msgstr "Back to Sign In"
+
+msgid "If an account with that email exists, a password reset link has been sent."
+msgstr "If an account with that email exists, a password reset link has been sent."
+
+msgid "Reset Password"
+msgstr "Reset Password"
+
+msgid "Enter your new password below."
+msgstr "Enter your new password below."
+
+msgid "New Password"
+msgstr "New Password"
+
+msgid "Invalid or expired reset link. Please request a new one."
+msgstr "Invalid or expired reset link. Please request a new one."
+
+msgid "Your password has been reset. You can now log in."
+msgstr "Your password has been reset. You can now log in."
+
+msgid "WodSniper: Reset Your Password"
+msgstr "WodSniper: Reset Your Password"
+
+msgid "Reset Your Password"
+msgstr "Reset Your Password"
+
+msgid "We received a request to reset your password. Click the button below to create a new password:"
+msgstr "We received a request to reset your password. Click the button below to create a new password:"
+
+msgid "Note:"
+msgstr "Note:"
+
+msgid "This link will expire in 1 hour. If you did not request a password reset, you can safely ignore this email."
+msgstr "This link will expire in 1 hour. If you did not request a password reset, you can safely ignore this email."
+
+msgid "Sent by WodSniper"
+msgstr "Sent by WodSniper"
+
+msgid "Forgot password?"
+msgstr "Forgot password?"
+
 # Errors
 msgid "Page Not Found"
 msgstr "Page Not Found"

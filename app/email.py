@@ -201,6 +201,72 @@ def render_booking_email(user, successful, failed, waiting):
     )
 
 
+def send_password_reset_email(user):
+    """Send a password reset email to the user."""
+    from flask import url_for
+    from flask_babel import gettext as _
+
+    logger.info(f'Password reset email requested for {user.email}')
+
+    api_key, _ = _get_email_config()
+
+    if not api_key:
+        logger.warning('RESEND_API_KEY not configured')
+        return False
+
+    token = user.get_reset_token()
+    reset_url = url_for('auth.reset_password', token=token, _external=True)
+
+    subject = _('WodSniper: Reset Your Password')
+    html_body = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background: #1d3557; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }}
+            .header h1 {{ margin: 0; font-size: 24px; }}
+            .content {{ background: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; }}
+            .btn {{ display: inline-block; background: #2a9d8f; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; margin: 16px 0; }}
+            .btn:hover {{ background: #238b7e; }}
+            .footer {{ text-align: center; margin-top: 20px; font-size: 12px; color: #666; }}
+            .note {{ background: #fff3cd; border: 1px solid #ffc107; padding: 12px; border-radius: 6px; font-size: 14px; margin-top: 16px; }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>WodSniper</h1>
+        </div>
+        <div class="content">
+            <h2>{_('Reset Your Password')}</h2>
+            <p>{_('We received a request to reset your password. Click the button below to create a new password:')}</p>
+
+            <p style="text-align: center;">
+                <a href="{reset_url}" class="btn">{_('Reset Password')}</a>
+            </p>
+
+            <div class="note">
+                <strong>{_('Note:')}</strong> {_('This link will expire in 1 hour. If you did not request a password reset, you can safely ignore this email.')}
+            </div>
+        </div>
+        <div class="footer">
+            <p>{_('Sent by WodSniper')}</p>
+        </div>
+    </body>
+    </html>
+    """
+
+    success = _send_with_resend(user.email, subject, html_body)
+
+    if success:
+        logger.info(f'Password reset email sent successfully to {user.email}')
+    else:
+        logger.error(f'Failed to send password reset email to {user.email}')
+
+    return success
+
+
 def send_test_email(user):
     """Send a test email to verify Resend configuration."""
     from flask_babel import gettext as _

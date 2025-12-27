@@ -311,6 +311,26 @@ body {
     color: var(--primary);
 }
 
+.forgot-password-link {
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.forgot-password-link a {
+    color: var(--gray-500);
+}
+
+.forgot-password-link a:hover {
+    color: var(--primary);
+}
+
+.auth-subtitle {
+    color: var(--gray-500);
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
 /* Forms */
 .form-group {
     margin-bottom: 1rem;

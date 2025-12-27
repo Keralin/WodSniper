@@ -3,9 +3,10 @@ from flask import render_template, redirect, url_for, flash, request, current_ap
 from flask_login import login_user, logout_user, login_required, current_user
 
 from app.auth import auth_bp
-from app.auth.forms import LoginForm, RegisterForm, WodBusterConnectForm
+from app.auth.forms import LoginForm, RegisterForm, WodBusterConnectForm, ForgotPasswordForm, ResetPasswordForm
 from app.models import db, User
 from app.scraper import WodBusterClient, LoginError
+from app.email import send_password_reset_email
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -61,6 +62,45 @@ def logout():
     logout_user()
     flash('You have been logged out', 'info')
     return redirect(url_for('auth.login'))
+
+
+@auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    """Request password reset."""
+    if current_user.is_authenticated:
+        return redirect(url_for('booking.dashboard'))
+
+    form = ForgotPasswordForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data.lower()).first()
+        if user:
+            send_password_reset_email(user)
+        # Always show success message to prevent email enumeration
+        flash('If an account with that email exists, a password reset link has been sent.', 'info')
+        return redirect(url_for('auth.login'))
+
+    return render_template('auth/forgot_password.html', form=form)
+
+
+@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    """Reset password with token."""
+    if current_user.is_authenticated:
+        return redirect(url_for('booking.dashboard'))
+
+    user = User.verify_reset_token(token)
+    if not user:
+        flash('Invalid or expired reset link. Please request a new one.', 'error')
+        return redirect(url_for('auth.forgot_password'))
+
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        user.set_password(form.password.data)
+        db.session.commit()
+        flash('Your password has been reset. You can now log in.', 'success')
+        return redirect(url_for('auth.login'))
+
+    return render_template('auth/reset_password.html', form=form)
 
 
 @auth_bp.route('/connect', methods=['GET', 'POST'])

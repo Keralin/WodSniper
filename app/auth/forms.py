@@ -61,3 +61,25 @@ class WodBusterConnectForm(FlaskForm):
         if 'wodbuster.com' not in url:
             raise ValidationError('URL must be a WodBuster URL (e.g., https://yourbox.wodbuster.com)')
         box_url.data = url
+
+
+class ForgotPasswordForm(FlaskForm):
+    """Form to request password reset."""
+    email = StringField('Email', validators=[
+        DataRequired(message='Email is required'),
+        Email(message='Invalid email')
+    ])
+    submit = SubmitField('Send Reset Link')
+
+
+class ResetPasswordForm(FlaskForm):
+    """Form to reset password with token."""
+    password = PasswordField('New Password', validators=[
+        DataRequired(message='Password is required'),
+        Length(min=6, message='Password must be at least 6 characters')
+    ])
+    password2 = PasswordField('Confirm Password', validators=[
+        DataRequired(message='Please confirm your password'),
+        EqualTo('password', message='Passwords do not match')
+    ])
+    submit = SubmitField('Reset Password')

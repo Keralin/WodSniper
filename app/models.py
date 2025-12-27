@@ -2,6 +2,8 @@ from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from itsdangerous import URLSafeTimedSerializer
+from flask import current_app
 import pickle
 
 db = SQLAlchemy()
@@ -64,6 +66,21 @@ class User(UserMixin, db.Model):
             # https://teknix.wodbuster.com -> teknix
             return self.box_url.replace('https://', '').replace('.wodbuster.com', '').split('/')[0]
         return None
+
+    def get_reset_token(self):
+        """Generate a password reset token valid for 1 hour."""
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        return s.dumps(self.email, salt='password-reset')
+
+    @staticmethod
+    def verify_reset_token(token, max_age=3600):
+        """Verify a password reset token. Returns user if valid, None otherwise."""
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        try:
+            email = s.loads(token, salt='password-reset', max_age=max_age)
+        except Exception:
+            return None
+        return User.query.filter_by(email=email).first()
 
     def __repr__(self):
         return f'<User {self.email}>'
