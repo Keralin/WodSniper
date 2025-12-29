@@ -36,6 +36,15 @@ logs/
 
 # Docker
 .docker/
+Dockerfile
+docker-entrypoint.sh
 
 # Claude Code
 .claude/
+
+# Screenshots and temp files
+*.jpg
+*.jpeg
+*.png
+photo_*
+TODO.md
