@@ -570,3 +570,22 @@ msgstr "Server Error"
 
 msgid "An unexpected error occurred"
 msgstr "An unexpected error occurred"
+
+# Form validation messages
+msgid "Email is required"
+msgstr "Email is required"
+
+msgid "Invalid email"
+msgstr "Invalid email"
+
+msgid "Password is required"
+msgstr "Password is required"
+
+msgid "Password must be at least 6 characters"
+msgstr "Password must be at least 6 characters"
+
+msgid "Please confirm your password"
+msgstr "Please confirm your password"
+
+msgid "Passwords do not match"
+msgstr "Passwords do not match"

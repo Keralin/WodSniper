@@ -1,4 +1,5 @@
 from flask_wtf import FlaskForm
+from flask_babel import lazy_gettext as _l
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, URL, ValidationError
 
@@ -65,21 +66,21 @@ class WodBusterConnectForm(FlaskForm):
 
 class ForgotPasswordForm(FlaskForm):
     """Form to request password reset."""
-    email = StringField('Email', validators=[
-        DataRequired(message='Email is required'),
-        Email(message='Invalid email')
+    email = StringField(_l('Email'), validators=[
+        DataRequired(message=_l('Email is required')),
+        Email(message=_l('Invalid email'))
     ])
-    submit = SubmitField('Send Reset Link')
+    submit = SubmitField(_l('Send Reset Link'))
 
 
 class ResetPasswordForm(FlaskForm):
     """Form to reset password with token."""
-    password = PasswordField('New Password', validators=[
-        DataRequired(message='Password is required'),
-        Length(min=6, message='Password must be at least 6 characters')
+    password = PasswordField(_l('New Password'), validators=[
+        DataRequired(message=_l('Password is required')),
+        Length(min=6, message=_l('Password must be at least 6 characters'))
     ])
-    password2 = PasswordField('Confirm Password', validators=[
-        DataRequired(message='Please confirm your password'),
-        EqualTo('password', message='Passwords do not match')
+    password2 = PasswordField(_l('Confirm Password'), validators=[
+        DataRequired(message=_l('Please confirm your password')),
+        EqualTo('password', message=_l('Passwords do not match'))
     ])
-    submit = SubmitField('Reset Password')
+    submit = SubmitField(_l('Reset Password'))
