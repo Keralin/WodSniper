@@ -26,6 +26,9 @@ class User(UserMixin, db.Model):
     # Notification preferences
     email_notifications = db.Column(db.Boolean, default=True)
 
+    # Admin
+    is_admin = db.Column(db.Boolean, default=False)
+
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime, nullable=True)

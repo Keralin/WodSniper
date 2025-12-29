@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Bookings - Admin - WodSniper{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-header">
+        <h1>Bookings</h1>
+        <div class="admin-nav">
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline">Dashboard</a>
+            <a href="{{ url_for('admin.users') }}" class="btn btn-outline">Users</a>
+            <a href="{{ url_for('admin.logs') }}" class="btn btn-outline">Logs</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-info">
+            <span>{{ bookings.total }} bookings total</span>
+        </div>
+
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>Day</th>
+                    <th>Time</th>
+                    <th>Class</th>
+                    <th>Status</th>
+                    <th>Active</th>
+                    <th>Success/Fail</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings.items %}
+                <tr>
+                    <td>{{ booking.id }}</td>
+                    <td>
+                        <a href="{{ url_for('admin.user_detail', user_id=booking.user_id) }}">
+                            {{ booking.user.email[:25] }}{% if booking.user.email|length > 25 %}...{% endif %}
+                        </a>
+                    </td>
+                    <td>{{ booking.day_name }}</td>
+                    <td>{{ booking.time }}</td>
+                    <td>{{ booking.class_type }}</td>
+                    <td>
+                        <span class="status-badge status-{{ booking.status }}">{{ booking.status }}</span>
+                    </td>
+                    <td>{{ 'Yes' if booking.is_active else 'No' }}</td>
+                    <td>{{ booking.success_count }} / {{ booking.fail_count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if bookings.pages > 1 %}
+        <div class="pagination">
+            {% if bookings.has_prev %}
+            <a href="{{ url_for('admin.bookings', page=bookings.prev_num) }}" class="btn btn-sm btn-outline">&laquo; Prev</a>
+            {% endif %}
+
+            <span class="page-info">Page {{ bookings.page }} of {{ bookings.pages }}</span>
+
+            {% if bookings.has_next %}
+            <a href="{{ url_for('admin.bookings', page=bookings.next_num) }}" class="btn btn-sm btn-outline">Next &raquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Logs - Admin - WodSniper{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-header">
+        <h1>Booking Logs</h1>
+        <div class="admin-nav">
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline">Dashboard</a>
+            <a href="{{ url_for('admin.users') }}" class="btn btn-outline">Users</a>
+            <a href="{{ url_for('admin.bookings') }}" class="btn btn-outline">Bookings</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-info">
+            <span>{{ logs.total }} log entries</span>
+        </div>
+
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>User</th>
+                    <th>Booking</th>
+                    <th>Target</th>
+                    <th>Status</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs.items %}
+                <tr>
+                    <td>{{ log.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>
+                        <a href="{{ url_for('admin.user_detail', user_id=log.booking.user_id) }}">
+                            {{ log.booking.user.email[:20] }}{% if log.booking.user.email|length > 20 %}...{% endif %}
+                        </a>
+                    </td>
+                    <td>{{ log.booking.day_name }} {{ log.booking.time }} - {{ log.booking.class_type[:15] }}{% if log.booking.class_type|length > 15 %}...{% endif %}</td>
+                    <td>{{ log.target_date.strftime('%d/%m/%Y') if log.target_date else '-' }}</td>
+                    <td>
+                        <span class="status-badge status-{{ log.status }}">{{ log.status }}</span>
+                    </td>
+                    <td title="{{ log.message }}">{{ log.message[:40] if log.message else '-' }}{% if log.message and log.message|length > 40 %}...{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if logs.pages > 1 %}
+        <div class="pagination">
+            {% if logs.has_prev %}
+            <a href="{{ url_for('admin.logs', page=logs.prev_num) }}" class="btn btn-sm btn-outline">&laquo; Prev</a>
+            {% endif %}
+
+            <span class="page-info">Page {{ logs.page }} of {{ logs.pages }}</span>
+
+            {% if logs.has_next %}
+            <a href="{{ url_for('admin.logs', page=logs.next_num) }}" class="btn btn-sm btn-outline">Next &raquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

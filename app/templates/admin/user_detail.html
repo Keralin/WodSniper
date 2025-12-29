@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}{{ user.email }} - Admin - WodSniper{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-header">
+        <h1>User Details</h1>
+        <a href="{{ url_for('admin.users') }}" class="btn btn-outline">&larr; Back to Users</a>
+    </div>
+
+    <div class="admin-grid">
+        <div class="card">
+            <h2>{{ user.email }}</h2>
+            {% if user.is_admin %}<span class="badge badge-admin">Admin</span>{% endif %}
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">ID</span>
+                    <span class="info-value">{{ user.id }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Email</span>
+                    <span class="info-value">{{ user.email }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Box</span>
+                    <span class="info-value">{{ user.box_name or 'Not connected' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">WodBuster Email</span>
+                    <span class="info-value">{{ user.wodbuster_email or '-' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Created</span>
+                    <span class="info-value">{{ user.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Last Login</span>
+                    <span class="info-value">{{ user.last_login.strftime('%d/%m/%Y %H:%M') if user.last_login else 'Never' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Email Notifications</span>
+                    <span class="info-value">{{ 'Enabled' if user.email_notifications else 'Disabled' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Active Bookings</span>
+                    <span class="info-value">{{ bookings|selectattr('is_active')|list|length }} / {{ bookings|length }}</span>
+                </div>
+            </div>
+
+            <div class="admin-actions">
+                <form method="POST" action="{{ url_for('admin.reset_user_password', user_id=user.id) }}" class="inline-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline">Send Password Reset</button>
+                </form>
+
+                <form method="POST" action="{{ url_for('admin.toggle_admin', user_id=user.id) }}" class="inline-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline">
+                        {% if user.is_admin %}Remove Admin{% else %}Make Admin{% endif %}
+                    </button>
+                </form>
+
+                <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}" class="inline-form"
+                      onsubmit="return confirm('Delete user {{ user.email }}? This cannot be undone.')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">Delete User</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Scheduled Bookings</h2>
+            {% if bookings %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th>Time</th>
+                        <th>Class</th>
+                        <th>Status</th>
+                        <th>Active</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings %}
+                    <tr>
+                        <td>{{ booking.day_name }}</td>
+                        <td>{{ booking.time }}</td>
+                        <td>{{ booking.class_type }}</td>
+                        <td>
+                            <span class="status-badge status-{{ booking.status }}">
+                                {{ booking.status }}
+                            </span>
+                        </td>
+                        <td>{{ 'Yes' if booking.is_active else 'No' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">No bookings scheduled.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Recent Activity</h2>
+        {% if recent_logs %}
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Booking</th>
+                    <th>Status</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in recent_logs %}
+                <tr>
+                    <td>{{ log.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>{{ log.booking.day_name }} {{ log.booking.time }} - {{ log.booking.class_type }}</td>
+                    <td>
+                        <span class="status-badge status-{{ log.status }}">{{ log.status }}</span>
+                    </td>
+                    <td>{{ log.message[:50] }}{% if log.message and log.message|length > 50 %}...{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No activity yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

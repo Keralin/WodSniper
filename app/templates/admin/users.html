@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Users - Admin - WodSniper{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-header">
+        <h1>Users</h1>
+        <div class="admin-nav">
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline">Dashboard</a>
+            <a href="{{ url_for('admin.bookings') }}" class="btn btn-outline">Bookings</a>
+            <a href="{{ url_for('admin.logs') }}" class="btn btn-outline">Logs</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-info">
+            <span>{{ users.total }} users total</span>
+        </div>
+
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Email</th>
+                    <th>Box</th>
+                    <th>Bookings</th>
+                    <th>Last Login</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users.items %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>
+                        <a href="{{ url_for('admin.user_detail', user_id=user.id) }}">
+                            {{ user.email }}
+                        </a>
+                        {% if user.is_admin %}<span class="badge badge-admin">Admin</span>{% endif %}
+                    </td>
+                    <td>{{ user.box_name or '-' }}</td>
+                    <td>{{ user.bookings.count() }}</td>
+                    <td>{{ user.last_login.strftime('%d/%m/%Y %H:%M') if user.last_login else '-' }}</td>
+                    <td>{{ user.created_at.strftime('%d/%m/%Y') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if users.pages > 1 %}
+        <div class="pagination">
+            {% if users.has_prev %}
+            <a href="{{ url_for('admin.users', page=users.prev_num) }}" class="btn btn-sm btn-outline">&laquo; Prev</a>
+            {% endif %}
+
+            <span class="page-info">Page {{ users.page }} of {{ users.pages }}</span>
+
+            {% if users.has_next %}
+            <a href="{{ url_for('admin.users', page=users.next_num) }}" class="btn btn-sm btn-outline">Next &raquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

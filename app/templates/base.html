@@ -27,6 +27,9 @@
                     <a href="{{ url_for('booking.dashboard') }}">{{ _('Dashboard') }}</a>
                     <a href="{{ url_for('booking.new_booking') }}">{{ _('New Booking') }}</a>
                     <a href="{{ url_for('auth.connect_wodbuster') }}">{{ _('Settings') }}</a>
+                    {% if current_user.is_admin %}
+                    <a href="{{ url_for('admin.dashboard') }}" class="admin-link">Admin</a>
+                    {% endif %}
                     <a href="{{ url_for('auth.logout') }}" class="btn btn-outline">{{ _('Logout') }}</a>
                 {% else %}
                     <a href="{{ url_for('auth.login') }}" class="btn btn-outline">{{ _('Sign In') }}</a>

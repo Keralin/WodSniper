@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - WodSniper{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-header">
+        <h1>Admin Dashboard</h1>
+        <div class="admin-nav">
+            <a href="{{ url_for('admin.users') }}" class="btn btn-outline">Users</a>
+            <a href="{{ url_for('admin.bookings') }}" class="btn btn-outline">Bookings</a>
+            <a href="{{ url_for('admin.logs') }}" class="btn btn-outline">Logs</a>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_users }}</div>
+            <div class="stat-label">Total Users</div>
+            <div class="stat-detail">{{ users_with_wodbuster }} connected to WodBuster</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-number">{{ total_bookings }}</div>
+            <div class="stat-label">Total Bookings</div>
+            <div class="stat-detail">{{ active_bookings }} active</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-number">{{ "%.1f"|format(success_rate) }}%</div>
+            <div class="stat-label">Success Rate (30d)</div>
+            <div class="stat-detail">{{ success_count }} success / {{ failed_count }} failed</div>
+        </div>
+    </div>
+
+    <div class="admin-grid">
+        <div class="card">
+            <h2>Recent Users</h2>
+            {% if recent_users %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Box</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in recent_users %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('admin.user_detail', user_id=user.id) }}">
+                                {{ user.email }}
+                            </a>
+                            {% if user.is_admin %}<span class="badge badge-admin">Admin</span>{% endif %}
+                        </td>
+                        <td>{{ user.box_name or '-' }}</td>
+                        <td>{{ user.created_at.strftime('%d/%m/%Y') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">No users yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h2>Recent Activity</h2>
+            {% if recent_booking_logs %}
+            <div class="activity-list">
+                {% for log in recent_booking_logs %}
+                <div class="activity-item">
+                    <span class="status-badge status-{{ log.status }}">
+                        {% if log.status == 'success' %}OK{% elif log.status == 'failed' %}FAIL{% else %}{{ log.status|upper }}{% endif %}
+                    </span>
+                    <span class="activity-details">
+                        {{ log.booking.user.email[:20] }}{% if log.booking.user.email|length > 20 %}...{% endif %}
+                        - {{ log.booking.class_type }}
+                    </span>
+                    <span class="activity-time">
+                        {{ log.created_at.strftime('%d/%m %H:%M') }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">No activity yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

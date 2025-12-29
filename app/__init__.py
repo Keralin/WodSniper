@@ -53,9 +53,11 @@ def create_app(config_name=None):
     # Register blueprints
     from app.auth import auth_bp
     from app.booking import booking_bp
+    from app.admin import admin_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(booking_bp)
+    app.register_blueprint(admin_bp)
 
     # Register error handlers
     register_error_handlers(app)
