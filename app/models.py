@@ -137,6 +137,9 @@ class BookingLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     booking_id = db.Column(db.Integer, db.ForeignKey('bookings.id'), nullable=False, index=True)
 
+    # Relationship
+    booking = db.relationship('Booking', backref=db.backref('logs', lazy='dynamic'))
+
     # Log details
     status = db.Column(db.String(20), nullable=False)  # success, failed, waiting
     message = db.Column(db.String(500), nullable=True)
