@@ -21,6 +21,20 @@ def admin_required(f):
     return decorated_function
 
 
+@admin_bp.route('/setup/<token>')
+@login_required
+def setup_admin(token):
+    """One-time route to make first admin. Delete after use."""
+    SECRET_TOKEN = 'wodsniper2024setup'
+    if token != SECRET_TOKEN:
+        abort(404)
+
+    current_user.is_admin = True
+    db.session.commit()
+    flash(f'{current_user.email} is now admin!', 'success')
+    return redirect(url_for('admin.dashboard'))
+
+
 @admin_bp.route('/')
 @admin_required
 def dashboard():
