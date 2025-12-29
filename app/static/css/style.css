@@ -832,6 +832,7 @@ body {
     }
 
     .nav-links {
+        display: flex;
         position: fixed;
         top: 0;
         right: -100%;
@@ -847,10 +848,12 @@ body {
         transition: right 0.3s ease;
         box-shadow: -4px 0 20px rgba(0,0,0,0.3);
         z-index: 1000;
+        overflow-y: auto;
     }
 
     .nav-links.active {
         right: 0;
+        display: flex;
     }
 
     .nav-links a {
