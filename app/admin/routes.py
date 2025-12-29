@@ -21,6 +21,31 @@ def admin_required(f):
     return decorated_function
 
 
+@admin_bp.route('/migrate/<token>')
+def run_migration(token):
+    """One-time route to add is_admin column. Delete after use."""
+    SECRET_TOKEN = 'wodsniper2024setup'
+    if token != SECRET_TOKEN:
+        abort(404)
+
+    from sqlalchemy import text
+    try:
+        # Check if column exists
+        result = db.session.execute(text(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_name='users' AND column_name='is_admin'"
+        ))
+        if result.fetchone():
+            return 'Column already exists. <a href="/admin/setup/wodsniper2024setup">Make yourself admin</a>'
+
+        # Add the column
+        db.session.execute(text('ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE'))
+        db.session.commit()
+        return 'Migration complete! Now <a href="/admin/setup/wodsniper2024setup">make yourself admin</a>'
+    except Exception as e:
+        return f'Error: {str(e)}'
+
+
 @admin_bp.route('/setup/<token>')
 @login_required
 def setup_admin(token):
