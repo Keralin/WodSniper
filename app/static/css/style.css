@@ -825,7 +825,11 @@ body {
 
 /* Responsive design - Mobile */
 @media (max-width: 768px) {
-    /* Mobile navigation */
+    /* Mobile navigation - navbar needs higher z-index to escape stacking context */
+    .navbar {
+        z-index: 1002;
+    }
+
     .mobile-menu-toggle {
         display: block;
         z-index: 1001;
