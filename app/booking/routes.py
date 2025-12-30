@@ -235,16 +235,19 @@ def get_classes_by_day(day_of_week):
             # Threshold: if <= 4 unique time slots, it's likely a special day
             unique_times = set(cls.get('time', '')[:5] for cls in classes if cls.get('time'))
             if len(unique_times) <= 4:
-                # Fetch last week's schedule as reference for typical day
-                past_date = today + timedelta(days=days_ahead - 7)
-                reference_classes = client.get_classes(past_date)
-                reference_unique_times = set(cls.get('time', '')[:5] for cls in reference_classes if cls.get('time'))
+                # Search up to 4 weeks back to find a "typical" day with more classes
+                # This handles holiday periods where multiple weeks have reduced schedules
+                for weeks_back in range(1, 5):
+                    past_date = today + timedelta(days=days_ahead - (7 * weeks_back))
+                    reference_classes = client.get_classes(past_date)
+                    reference_unique_times = set(cls.get('time', '')[:5] for cls in reference_classes if cls.get('time'))
 
-                # If last week had more classes, include it as reference
-                if len(reference_unique_times) > len(unique_times):
-                    is_special_day = True
-                    reference_date = past_date
-                    reference_slots = _group_classes_by_time(reference_classes)
+                    # Found a typical day with more classes
+                    if len(reference_unique_times) > 4:
+                        is_special_day = True
+                        reference_date = past_date
+                        reference_slots = _group_classes_by_time(reference_classes)
+                        break
 
         # Group classes by time, then by class type
         time_slots = _group_classes_by_time(classes)
