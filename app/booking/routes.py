@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from flask import render_template, redirect, url_for, flash, jsonify, request, session, current_app, abort
 from flask_login import login_required, current_user
+from flask_babel import gettext as _
 
 from app.booking import booking_bp
 from app.booking.forms import BookingForm
@@ -256,7 +257,7 @@ def get_classes_by_day(day_of_week):
                 'classes': sorted(time_slots[time])
             })
 
-        day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        day_names = [_('Monday'), _('Tuesday'), _('Wednesday'), _('Thursday'), _('Friday'), _('Saturday'), _('Sunday')]
         response_data = {
             'date': target_date.strftime('%Y-%m-%d'),
             'date_display': target_date.strftime('%d/%m/%Y'),
