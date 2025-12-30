@@ -67,6 +67,29 @@
                 {% endfor %}
             </div>
 
+            <!-- Selection Summary Box -->
+            <div class="selection-summary" id="selection-summary" style="display: none;">
+                <div class="selection-summary-header">
+                    <span class="selection-summary-icon">📋</span>
+                    <span class="selection-summary-title">{{ _('Your selection') }}</span>
+                    <span class="selection-summary-badge" id="summary-badge" style="display: none;"></span>
+                </div>
+                <div class="selection-summary-content">
+                    <div class="selection-item" id="summary-day">
+                        <span class="selection-label">{{ _('Day') }}:</span>
+                        <span class="selection-value" id="summary-day-value">-</span>
+                    </div>
+                    <div class="selection-item" id="summary-time">
+                        <span class="selection-label">{{ _('Time') }}:</span>
+                        <span class="selection-value" id="summary-time-value">-</span>
+                    </div>
+                    <div class="selection-item" id="summary-class">
+                        <span class="selection-label">{{ _('Class') }}:</span>
+                        <span class="selection-value" id="summary-class-value">-</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="form-group">
                 <button type="submit" class="btn btn-primary btn-block" id="submit-btn" disabled>
                     {{ _('Schedule Booking') }}
@@ -117,6 +140,83 @@
     color: #e9c46a !important;
     font-weight: 500;
 }
+
+/* Selection Summary Box */
+.selection-summary {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+.selection-summary.highlight {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(231, 111, 81, 0.2);
+}
+.selection-summary.special-day {
+    border-color: #e9c46a;
+    background: linear-gradient(135deg, rgba(233, 196, 106, 0.1) 0%, transparent 100%);
+    box-shadow: 0 0 0 3px rgba(233, 196, 106, 0.2);
+}
+.selection-summary-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+.selection-summary-icon {
+    font-size: 1.25rem;
+}
+.selection-summary-title {
+    font-weight: 600;
+    color: var(--text);
+    flex: 1;
+}
+.selection-summary-badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.selection-summary-badge.typical {
+    background: var(--primary);
+    color: white;
+}
+.selection-summary-badge.special {
+    background: #e9c46a;
+    color: #1a1a2e;
+}
+.selection-summary-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.selection-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.selection-label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    min-width: 60px;
+}
+.selection-value {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 0.95rem;
+}
+.selection-value.empty {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+.selection-value.filled {
+    color: var(--primary);
+}
 </style>
 <script>
 (function() {
@@ -132,6 +232,13 @@
     const labelSpecial = document.getElementById('label-special');
     const labelTypical = document.getElementById('label-typical');
     const scheduleWarning = document.getElementById('schedule-warning');
+
+    // Selection summary elements
+    const selectionSummary = document.getElementById('selection-summary');
+    const summaryBadge = document.getElementById('summary-badge');
+    const summaryDayValue = document.getElementById('summary-day-value');
+    const summaryTimeValue = document.getElementById('summary-time-value');
+    const summaryClassValue = document.getElementById('summary-class-value');
 
     // Translated strings
     const i18n = {
@@ -156,8 +263,71 @@
         specialDayWarning: '{{ _("This week has a reduced schedule. Use Typical to see normal classes.") }}',
         timeSlots: '{{ _("time slots") }}',
         typicalScheduleFor: '{{ _("Typical schedule for") }}',
-        selectedSchedule: '{{ _("Selected:") }}'
+        selectedSchedule: '{{ _("Selected:") }}',
+        specialSchedule: '{{ _("Special") }}',
+        notSelected: '-'
     };
+
+    // Day names for summary display
+    const dayNames = {
+        '0': '{{ _("Monday") }}',
+        '1': '{{ _("Tuesday") }}',
+        '2': '{{ _("Wednesday") }}',
+        '3': '{{ _("Thursday") }}',
+        '4': '{{ _("Friday") }}',
+        '5': '{{ _("Saturday") }}',
+        '6': '{{ _("Sunday") }}'
+    };
+
+    function updateSelectionSummary() {
+        const dayVal = daySelect.value;
+        const timeVal = timeSelect.value;
+        const classVal = classSelect.value;
+
+        // Show summary if at least day is selected
+        if (dayVal) {
+            selectionSummary.style.display = 'block';
+
+            // Update day
+            summaryDayValue.textContent = dayNames[dayVal] || i18n.notSelected;
+            summaryDayValue.classList.toggle('filled', !!dayVal);
+            summaryDayValue.classList.toggle('empty', !dayVal);
+
+            // Update time
+            summaryTimeValue.textContent = timeVal || i18n.notSelected;
+            summaryTimeValue.classList.toggle('filled', !!timeVal);
+            summaryTimeValue.classList.toggle('empty', !timeVal);
+
+            // Update class
+            const classText = classVal ? classSelect.options[classSelect.selectedIndex].textContent : i18n.notSelected;
+            summaryClassValue.textContent = classText;
+            summaryClassValue.classList.toggle('filled', !!classVal);
+            summaryClassValue.classList.toggle('empty', !classVal);
+
+            // Update styling based on special day and schedule type
+            const isSpecialDay = apiData && apiData.is_special_day;
+            const isUsingTypical = currentScheduleType === 'typical';
+
+            selectionSummary.classList.toggle('special-day', isSpecialDay && !isUsingTypical);
+            selectionSummary.classList.toggle('highlight', classVal && (!isSpecialDay || isUsingTypical));
+
+            // Update badge
+            if (isSpecialDay) {
+                summaryBadge.style.display = 'inline';
+                if (isUsingTypical) {
+                    summaryBadge.textContent = i18n.typicalSchedule;
+                    summaryBadge.className = 'selection-summary-badge typical';
+                } else {
+                    summaryBadge.textContent = i18n.specialSchedule;
+                    summaryBadge.className = 'selection-summary-badge special';
+                }
+            } else {
+                summaryBadge.style.display = 'none';
+            }
+        } else {
+            selectionSummary.style.display = 'none';
+        }
+    }
 
     let classData = {}; // Store classes by time for current selection
     let specialDaySlots = null; // Store special day slots
@@ -218,6 +388,8 @@
         } else if (scheduleType === 'typical' && typicalSlots) {
             populateTimeSelect(typicalSlots, apiData.typical_date_display, true);
         }
+
+        updateSelectionSummary();
     }
 
     // Schedule toggle button handlers
@@ -245,6 +417,7 @@
         if (!day) {
             timeSelect.innerHTML = '<option value="">' + i18n.selectDayFirst + '</option>';
             timeHint.textContent = i18n.selectDayHint;
+            updateSelectionSummary();
             return;
         }
 
@@ -289,6 +462,8 @@
                     if (data.is_reference) {
                         timeHint.innerHTML = '<strong style="color: #e9c46a;">⚠ ' + i18n.referenceSchedule + '</strong> (' + i18n.basedOnLast + ' ' + data.day_name + ')';
                     }
+
+                    updateSelectionSummary();
                 }
             })
             .catch(err => {
@@ -307,6 +482,7 @@
 
         if (!time || !classData[time]) {
             classHint.textContent = i18n.selectTimeHint;
+            updateSelectionSummary();
             return;
         }
 
@@ -320,10 +496,12 @@
 
         classSelect.disabled = false;
         classHint.textContent = classes.length + ' ' + i18n.classTypesAvailable + ' ' + time;
+        updateSelectionSummary();
     });
 
     classSelect.addEventListener('change', function() {
         submitBtn.disabled = !this.value;
+        updateSelectionSummary();
     });
 })();
 </script>

@@ -589,3 +589,10 @@ msgstr "Por favor, confirma tu contraseña"
 
 msgid "Passwords do not match"
 msgstr "Las contraseñas no coinciden"
+
+# Selection summary
+msgid "Your selection"
+msgstr "Tu selección"
+
+msgid "Special"
+msgstr "Especial"
