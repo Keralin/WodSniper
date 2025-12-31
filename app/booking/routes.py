@@ -235,24 +235,19 @@ def get_classes_by_day(day_of_week):
         # This applies both to current week AND reference week data
         # Threshold: if <= 4 unique time slots, it's likely a special day
         unique_times = set(cls.get('time', '')[:5] for cls in classes if cls.get('time'))
-        current_app.logger.info(f'Day {day_of_week}: Found {len(unique_times)} unique time slots for {target_date.strftime("%Y-%m-%d")} (is_reference={is_reference})')
 
         if len(unique_times) <= 4:
-            # Search up to 4 weeks back to find a "typical" day with more classes
-            # This handles holiday periods where multiple weeks have reduced schedules
+            # Search back to find a "typical" day with more classes
             # Start from week 1 if not reference, or week 2 if reference (since week 1 is already used)
             start_week = 2 if is_reference else 1
-            current_app.logger.info(f'Special day detected ({len(unique_times)} slots). Searching for typical schedule from week -{start_week}...')
 
             for weeks_back in range(start_week, 6):  # Search up to 5 weeks back
                 past_date = today + timedelta(days=days_ahead - (7 * weeks_back))
                 reference_classes = client.get_classes(past_date)
                 reference_unique_times = set(cls.get('time', '')[:5] for cls in reference_classes if cls.get('time'))
-                current_app.logger.info(f'  Week -{weeks_back} ({past_date.strftime("%Y-%m-%d")}): {len(reference_unique_times)} slots')
 
                 # Found a typical day with more classes
                 if len(reference_unique_times) > 4:
-                    current_app.logger.info(f'  -> Found typical day with {len(reference_unique_times)} slots!')
                     is_special_day = True
                     reference_date = past_date
                     reference_slots = _group_classes_by_time(reference_classes)
