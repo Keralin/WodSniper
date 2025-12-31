@@ -265,11 +265,14 @@ p {
     text-decoration: none;
     font-weight: 600;
     font-size: 0.95rem;
+    line-height: 1;
+    vertical-align: middle;
     cursor: pointer;
     border: none;
     transition: all var(--transition-normal);
     position: relative;
     overflow: hidden;
+    box-sizing: border-box;
 }
 
 .btn-primary {
@@ -775,7 +778,8 @@ p {
 }
 
 .inline-form {
-    display: inline;
+    display: inline-flex;
+    vertical-align: middle;
 }
 
 /* ==================== */
