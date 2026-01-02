@@ -4,7 +4,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 
 from app.auth import auth_bp
 from app.auth.forms import LoginForm, RegisterForm, WodBusterConnectForm, ForgotPasswordForm, ResetPasswordForm
-from app.models import db, User
+from app.models import db, User, Box
 from app.scraper import WodBusterClient, LoginError
 from app.email import send_password_reset_email
 
@@ -124,8 +124,18 @@ def connect_wodbuster():
             client = WodBusterClient(box_url)
             client.login(email, password)
 
+            # Find or create Box
+            box = Box.query.filter_by(url=box_url).first()
+            if not box:
+                # Extract name from URL
+                name = box_url.replace('https://', '').replace('.wodbuster.com', '').split('/')[0]
+                box = Box(name=name, url=box_url)
+                db.session.add(box)
+                db.session.flush()
+
             # Save credentials and session
-            current_user.box_url = box_url
+            current_user.box_id = box.id
+            current_user.box_url = box_url  # Keep for backwards compat
             current_user.wodbuster_email = email
             current_user.set_wodbuster_password(password)  # Save encrypted password for auto re-login
             current_user.set_wodbuster_cookies(client.get_cookies())
@@ -147,12 +157,12 @@ def connect_wodbuster():
 @login_required
 def test_connection():
     """Test WodBuster connection."""
-    if not current_user.box_url:
+    if not current_user.effective_box_url:
         flash('Please connect your WodBuster account first', 'warning')
         return redirect(url_for('auth.connect_wodbuster'))
 
     try:
-        client = WodBusterClient(current_user.box_url)
+        client = WodBusterClient(current_user.effective_box_url)
         cookies = current_user.get_wodbuster_cookies()
 
         if cookies and client.restore_session(cookies):
@@ -177,11 +187,11 @@ def explore_endpoints():
     import json
     import time
 
-    if not current_user.box_url:
+    if not current_user.effective_box_url:
         return {'error': 'Not connected to WodBuster'}, 400
 
     try:
-        client = WodBusterClient(current_user.box_url)
+        client = WodBusterClient(current_user.effective_box_url)
         cookies = current_user.get_wodbuster_cookies()
 
         if not cookies or not client.restore_session(cookies):
@@ -231,3 +241,101 @@ def explore_endpoints():
 
     except Exception as e:
         return {'error': str(e)}, 500
+
+
+@auth_bp.route('/update-box-schedule', methods=['POST'])
+@login_required
+def update_box_schedule():
+    """Update the box's booking schedule configuration."""
+    if not current_user.box:
+        flash('No box connected', 'error')
+        return redirect(url_for('auth.connect_wodbuster'))
+
+    try:
+        booking_open_day = int(request.form.get('booking_open_day', 6))
+        booking_open_hour = int(request.form.get('booking_open_hour', 13))
+        booking_open_minute = int(request.form.get('booking_open_minute', 0))
+
+        # Validate
+        if not (0 <= booking_open_day <= 6):
+            raise ValueError('Invalid day')
+        if not (0 <= booking_open_hour <= 23):
+            raise ValueError('Invalid hour')
+        if not (0 <= booking_open_minute <= 59):
+            raise ValueError('Invalid minute')
+
+        current_user.box.booking_open_day = booking_open_day
+        current_user.box.booking_open_hour = booking_open_hour
+        current_user.box.booking_open_minute = booking_open_minute
+
+        db.session.commit()
+
+        flash(f'Schedule updated: {current_user.box.opening_time_display}', 'success')
+
+    except (ValueError, TypeError) as e:
+        flash(f'Invalid schedule values: {e}', 'error')
+
+    return redirect(url_for('auth.connect_wodbuster'))
+
+
+@auth_bp.route('/migrate-boxes')
+def migrate_boxes():
+    """
+    Migration route to create boxes table and migrate existing users.
+    Run once then remove.
+    """
+    from sqlalchemy import inspect, text
+
+    results = []
+
+    # Check if boxes table exists
+    inspector = inspect(db.engine)
+    tables = inspector.get_table_names()
+
+    if 'boxes' not in tables:
+        # Create boxes table
+        Box.__table__.create(db.engine)
+        results.append('Created boxes table')
+
+    # Check if box_id column exists in users table
+    columns = [c['name'] for c in inspector.get_columns('users')]
+    if 'box_id' not in columns:
+        db.session.execute(text('ALTER TABLE users ADD COLUMN box_id INTEGER REFERENCES boxes(id)'))
+        db.session.commit()
+        results.append('Added box_id column to users table')
+
+    # Migrate existing users to boxes
+    users_with_box_url = User.query.filter(
+        User.box_url.isnot(None),
+        User.box_id.is_(None)
+    ).all()
+
+    boxes_created = 0
+    users_migrated = 0
+
+    for user in users_with_box_url:
+        # Check if box already exists
+        box = Box.query.filter_by(url=user.box_url).first()
+
+        if not box:
+            # Extract name from URL
+            name = user.box_url.replace('https://', '').replace('.wodbuster.com', '').split('/')[0]
+            box = Box(name=name, url=user.box_url)
+            db.session.add(box)
+            db.session.flush()  # Get the ID
+            boxes_created += 1
+
+        user.box_id = box.id
+        users_migrated += 1
+
+    db.session.commit()
+
+    if boxes_created > 0:
+        results.append(f'Created {boxes_created} box(es)')
+    if users_migrated > 0:
+        results.append(f'Migrated {users_migrated} user(s) to boxes')
+
+    if not results:
+        results.append('Nothing to migrate - already up to date')
+
+    return {'status': 'ok', 'results': results}

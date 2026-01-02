@@ -75,13 +75,13 @@ def dashboard():
     bookings = Booking.query.filter_by(user_id=current_user.id).order_by(Booking.day_of_week).all()
 
     # Check if WodBuster is connected
-    wodbuster_connected = bool(current_user.box_url and current_user.wodbuster_cookie)
+    wodbuster_connected = bool(current_user.effective_box_url and current_user.wodbuster_cookie)
 
     # Get account info (available credits)
     account_info = None
     if wodbuster_connected:
         try:
-            client = WodBusterClient(current_user.box_url)
+            client = WodBusterClient(current_user.effective_box_url)
             cookies = current_user.get_wodbuster_cookies()
             if cookies and client.restore_session(cookies):
                 account_info = client.get_account_info()
@@ -101,7 +101,7 @@ def dashboard():
 @login_required
 def new_booking():
     """Create a new scheduled booking."""
-    if not current_user.box_url:
+    if not current_user.effective_box_url:
         flash('Please connect your WodBuster account first', 'warning')
         return redirect(url_for('auth.connect_wodbuster'))
 
@@ -166,7 +166,7 @@ def delete_booking(booking_id):
 @login_required
 def get_classes():
     """Get available classes from WodBuster."""
-    if not current_user.box_url:
+    if not current_user.effective_box_url:
         return jsonify({'error': 'WodBuster not connected'}), 400
 
     date_str = request.args.get('date')
@@ -179,7 +179,7 @@ def get_classes():
         target_date = datetime.now()
 
     try:
-        client = WodBusterClient(current_user.box_url)
+        client = WodBusterClient(current_user.effective_box_url)
         cookies = current_user.get_wodbuster_cookies()
 
         if not cookies or not client.restore_session(cookies):
@@ -198,14 +198,14 @@ def get_classes():
 @login_required
 def get_classes_by_day(day_of_week):
     """Get available classes for a specific day of the week."""
-    if not current_user.box_url:
+    if not current_user.effective_box_url:
         return jsonify({'error': 'WodBuster not connected'}), 400
 
     if day_of_week < 0 or day_of_week > 6:
         return jsonify({'error': 'Invalid day of week'}), 400
 
     try:
-        client = WodBusterClient(current_user.box_url)
+        client = WodBusterClient(current_user.effective_box_url)
         cookies = current_user.get_wodbuster_cookies()
 
         if not cookies or not client.restore_session(cookies):
@@ -302,12 +302,12 @@ def book_now(booking_id):
     """Manually trigger a booking attempt."""
     booking = Booking.query.filter_by(id=booking_id, user_id=current_user.id).first_or_404()
 
-    if not current_user.box_url:
+    if not current_user.effective_box_url:
         flash('WodBuster not connected', 'error')
         return redirect(url_for('booking.dashboard'))
 
     try:
-        client = WodBusterClient(current_user.box_url)
+        client = WodBusterClient(current_user.effective_box_url)
         cookies = current_user.get_wodbuster_cookies()
 
         if not cookies or not client.restore_session(cookies):
@@ -402,7 +402,7 @@ def booking_logs(booking_id):
 @login_required
 def my_reservations():
     """View user's upcoming reservations from WodBuster."""
-    if not current_user.box_url:
+    if not current_user.effective_box_url:
         flash('WodBuster not connected', 'warning')
         return redirect(url_for('auth.connect_wodbuster'))
 
@@ -410,7 +410,7 @@ def my_reservations():
     error = None
 
     try:
-        client = WodBusterClient(current_user.box_url)
+        client = WodBusterClient(current_user.effective_box_url)
         cookies = current_user.get_wodbuster_cookies()
 
         if not cookies or not client.restore_session(cookies):
@@ -471,11 +471,11 @@ def debug_account():
     if not current_app.debug:
         abort(404)
 
-    if not current_user.box_url:
+    if not current_user.effective_box_url:
         return jsonify({'error': 'WodBuster not connected'}), 400
 
     try:
-        client = WodBusterClient(current_user.box_url)
+        client = WodBusterClient(current_user.effective_box_url)
         cookies = current_user.get_wodbuster_cookies()
 
         if not cookies or not client.restore_session(cookies):
@@ -483,7 +483,7 @@ def debug_account():
 
         # Fetch the athlete default page
         import cloudscraper
-        url = f'{current_user.box_url}/athlete/default.aspx'
+        url = f'{current_user.effective_box_url}/athlete/default.aspx'
         response = client.session.get(url, timeout=15)
 
         # Return just the relevant section (look for credits info)
@@ -519,12 +519,12 @@ def debug_account():
 @login_required
 def cancel_reservation(class_id, booking_id):
     """Cancel a reservation on WodBuster."""
-    if not current_user.box_url:
+    if not current_user.effective_box_url:
         flash('WodBuster not connected', 'error')
         return redirect(url_for('booking.my_reservations'))
 
     try:
-        client = WodBusterClient(current_user.box_url)
+        client = WodBusterClient(current_user.effective_box_url)
         cookies = current_user.get_wodbuster_cookies()
 
         if not cookies or not client.restore_session(cookies):

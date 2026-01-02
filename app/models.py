@@ -9,6 +9,41 @@ import pickle
 db = SQLAlchemy()
 
 
+class Box(db.Model):
+    """CrossFit/Gym box configuration."""
+    __tablename__ = 'boxes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)  # e.g., "teknix"
+    url = db.Column(db.String(256), unique=True, nullable=False)  # e.g., "https://teknix.wodbuster.com"
+
+    # Booking schedule configuration (when the box opens reservations)
+    # Default: Sunday (6) at 13:00 UTC (14:00 Spanish time)
+    booking_open_day = db.Column(db.Integer, default=6)  # 0=Monday, 6=Sunday
+    booking_open_hour = db.Column(db.Integer, default=13)  # 0-23 UTC
+    booking_open_minute = db.Column(db.Integer, default=0)  # 0-59
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships
+    users = db.relationship('User', backref='box', lazy='dynamic')
+
+    DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+    @property
+    def day_name(self):
+        """Return the day name for booking_open_day."""
+        return self.DAY_NAMES[self.booking_open_day]
+
+    @property
+    def opening_time_display(self):
+        """Return formatted opening time (e.g., 'Sunday 14:00')."""
+        return f"{self.day_name} {self.booking_open_hour:02d}:{self.booking_open_minute:02d} UTC"
+
+    def __repr__(self):
+        return f'<Box {self.name}>'
+
+
 class User(UserMixin, db.Model):
     """User model for WodSniper authentication."""
     __tablename__ = 'users'
@@ -18,7 +53,8 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
 
     # WodBuster connection
-    box_url = db.Column(db.String(256), nullable=True)  # e.g., https://teknix.wodbuster.com
+    box_id = db.Column(db.Integer, db.ForeignKey('boxes.id'), nullable=True)
+    box_url = db.Column(db.String(256), nullable=True)  # Legacy, kept for migration. Use box.url instead
     wodbuster_email = db.Column(db.String(120), nullable=True)
     wodbuster_password_encrypted = db.Column(db.String(512), nullable=True)  # Encrypted password
     wodbuster_cookie = db.Column(db.LargeBinary, nullable=True)  # Pickled session cookies
@@ -64,11 +100,20 @@ class User(UserMixin, db.Model):
 
     @property
     def box_name(self):
-        """Extract box name from URL."""
-        if self.box_url:
-            # https://teknix.wodbuster.com -> teknix
+        """Get box name from Box model or extract from legacy URL."""
+        if self.box:
+            return self.box.name
+        elif self.box_url:
+            # Legacy: https://teknix.wodbuster.com -> teknix
             return self.box_url.replace('https://', '').replace('.wodbuster.com', '').split('/')[0]
         return None
+
+    @property
+    def effective_box_url(self):
+        """Get box URL from Box model or legacy field."""
+        if self.box:
+            return self.box.url
+        return self.box_url
 
     def get_reset_token(self):
         """Generate a password reset token valid for 1 hour."""

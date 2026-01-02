@@ -588,6 +588,15 @@ p {
     margin-bottom: var(--space-lg);
 }
 
+.form-row {
+    display: flex;
+    gap: var(--space-md);
+}
+
+.form-row .form-group {
+    margin-bottom: var(--space-lg);
+}
+
 .form-group label {
     display: block;
     margin-bottom: var(--space-sm);

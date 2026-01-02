@@ -21,50 +21,223 @@ RETRY_DELAY = 2  # Seconds between retry attempts
 def init_scheduler(app):
     """Initialize the scheduler with the Flask app context."""
 
-    # Pre-refresh sessions at 12:50 UTC (13:50 Spanish time, 10 mins before booking window)
-    # This ensures fresh cookies are ready before the critical booking time
+    # Check every minute for boxes that have their booking window opening
     scheduler.add_job(
-        func=lambda: refresh_all_sessions(app),
-        trigger=CronTrigger(day_of_week='sun', hour=12, minute=50),
-        id='session_refresh',
-        name='Pre-Booking Session Refresh',
+        func=lambda: check_booking_windows(app),
+        trigger='interval',
+        minutes=1,
+        id='booking_window_check',
+        name='Booking Window Check',
         replace_existing=True
     )
 
-    # Run booking check every Sunday at 12:55 UTC (13:55 Spanish time, 5 mins before 14:00)
+    # Pre-refresh sessions 10 minutes before each box's booking window
+    # Runs every minute and checks which boxes need session refresh
     scheduler.add_job(
-        func=lambda: run_scheduled_bookings(app),
-        trigger=CronTrigger(day_of_week='sun', hour=12, minute=55),
-        id='weekly_booking_check',
-        name='Weekly Booking Check',
+        func=lambda: check_session_refresh(app),
+        trigger='interval',
+        minutes=1,
+        id='session_refresh_check',
+        name='Session Refresh Check',
         replace_existing=True
     )
-
-    # Debug scheduler - disabled by default, change minutes=60 to lower value for testing
-    if app.debug:
-        scheduler.add_job(
-            func=lambda: check_pending_bookings(app),
-            trigger='interval',
-            minutes=60,  # Set to 1 for testing, 60 to effectively disable
-            id='debug_booking_check',
-            name='Debug Booking Check',
-            replace_existing=True
-        )
 
     scheduler.start()
-    logger.info('Scheduler initialized')
+    logger.info('Scheduler initialized - checking booking windows every minute')
 
     # Log scheduled jobs for verification
     for job in scheduler.get_jobs():
         logger.info(f'Scheduled job: {job.name} - Next run: {job.next_run_time}')
 
 
+def check_booking_windows(app):
+    """
+    Check if any box has its booking window opening right now.
+    Runs every minute to support per-box scheduling.
+    """
+    from app.models import db, Box, User, Booking
+
+    with app.app_context():
+        now = datetime.now()
+        current_day = now.weekday()  # 0=Monday, 6=Sunday
+        current_hour = now.hour
+        current_minute = now.minute
+
+        # Find boxes whose booking window opens in 5 minutes
+        # We trigger 5 min early to wait precisely until the exact time
+        target_minute = (current_minute + 5) % 60
+        target_hour = current_hour + ((current_minute + 5) // 60)
+        if target_hour >= 24:
+            # Would be next day - skip for now
+            return
+
+        boxes_opening = Box.query.filter(
+            Box.booking_open_day == current_day,
+            Box.booking_open_hour == target_hour,
+            Box.booking_open_minute == target_minute
+        ).all()
+
+        if not boxes_opening:
+            return
+
+        for box in boxes_opening:
+            logger.info(f'Booking window opening for box {box.name} at {target_hour:02d}:{target_minute:02d}')
+            run_scheduled_bookings_for_box(app, box)
+
+
+def check_session_refresh(app):
+    """
+    Check if any box needs session refresh (10 min before booking window).
+    """
+    from app.models import db, Box
+
+    with app.app_context():
+        now = datetime.now()
+        current_day = now.weekday()
+        current_hour = now.hour
+        current_minute = now.minute
+
+        # Find boxes whose booking window opens in 10 minutes
+        target_minute = (current_minute + 10) % 60
+        target_hour = current_hour + ((current_minute + 10) // 60)
+        if target_hour >= 24:
+            return
+
+        boxes_to_refresh = Box.query.filter(
+            Box.booking_open_day == current_day,
+            Box.booking_open_hour == target_hour,
+            Box.booking_open_minute == target_minute
+        ).all()
+
+        if not boxes_to_refresh:
+            return
+
+        for box in boxes_to_refresh:
+            logger.info(f'Refreshing sessions for box {box.name} (window opens in 10 min)')
+            refresh_sessions_for_box(app, box)
+
+
+def refresh_sessions_for_box(app, box):
+    """Refresh sessions for all users of a specific box."""
+    from app.models import db, User, Booking
+    from app.scraper import WodBusterClient, LoginError
+
+    logger.info(f'=== Refreshing sessions for box: {box.name} ===')
+
+    with app.app_context():
+        # Get users with active bookings for this box
+        users = User.query.filter(
+            User.box_id == box.id,
+            User.wodbuster_email.isnot(None)
+        ).join(Booking).filter(
+            Booking.is_active == True
+        ).distinct().all()
+
+        if not users:
+            logger.info(f'No users with active bookings for box {box.name}')
+            return
+
+        logger.info(f'Refreshing sessions for {len(users)} users')
+
+        for user in users:
+            try:
+                logger.info(f'Refreshing session for {user.email}')
+                client = WodBusterClient(user.effective_box_url)
+
+                wodbuster_password = user.get_wodbuster_password()
+                if wodbuster_password and user.wodbuster_email:
+                    client.login(user.wodbuster_email, wodbuster_password)
+                    user.set_wodbuster_cookies(client.get_cookies())
+                    db.session.commit()
+                    logger.info(f'Session refreshed for {user.email}')
+                else:
+                    logger.warning(f'No credentials for {user.email}')
+
+            except LoginError as e:
+                logger.error(f'Failed to refresh session for {user.email}: {e}')
+            except Exception as e:
+                logger.exception(f'Error refreshing session for {user.email}: {e}')
+
+            time.sleep(2)  # Avoid rate limiting
+
+    logger.info(f'=== Session refresh complete for box: {box.name} ===')
+
+
+def run_scheduled_bookings_for_box(app, box):
+    """Execute scheduled bookings for a specific box when its window opens."""
+    from app.models import db, User, Booking, BookingLog
+    from app.scraper import WodBusterClient
+    from collections import defaultdict
+
+    logger.info('=' * 60)
+    logger.info(f'=== BOOKING WINDOW FOR BOX: {box.name} ===')
+    logger.info(f'Current time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")}')
+
+    with app.app_context():
+        # Get active bookings for users of this box
+        bookings = Booking.query.filter_by(
+            is_active=True
+        ).join(User).filter(
+            User.box_id == box.id,
+            User.wodbuster_cookie.isnot(None)
+        ).all()
+
+        if not bookings:
+            logger.info(f'No active bookings for box {box.name}')
+            return
+
+        logger.info(f'Found {len(bookings)} active bookings for box {box.name}')
+
+        # Wait until exact opening time
+        now = datetime.now()
+        target_time = now.replace(
+            hour=box.booking_open_hour,
+            minute=box.booking_open_minute,
+            second=0,
+            microsecond=0
+        )
+
+        if now < target_time:
+            wait_seconds = (target_time - now).total_seconds()
+            logger.info(f'Waiting {wait_seconds:.1f} seconds until {box.booking_open_hour:02d}:{box.booking_open_minute:02d}...')
+            time.sleep(max(0, wait_seconds - 1))
+
+            # Precise wait for the last second
+            while datetime.now() < target_time:
+                time.sleep(0.01)
+
+        logger.info(f'=== BOOKING START at {datetime.now().strftime("%H:%M:%S.%f")} ===')
+
+        results_by_user = defaultdict(list)
+
+        for booking in bookings:
+            try:
+                result = _process_single_booking(booking, app)
+                if result:
+                    results_by_user[booking.user_id].append(result)
+            except Exception as e:
+                logger.error(f'Error processing booking {booking.id}: {e}')
+                results_by_user[booking.user_id].append({
+                    'status': 'failed',
+                    'day_name': booking.day_name,
+                    'time': booking.time,
+                    'class_type': booking.class_type,
+                    'message': str(e),
+                    'target_date': None
+                })
+
+            _wait_for_rate_limit()
+
+        _send_booking_notifications(app, results_by_user)
+
+        logger.info(f'=== BOOKING COMPLETE FOR BOX: {box.name} ===')
+        logger.info('=' * 60)
+
+
 def refresh_all_sessions(app):
     """
     Refresh sessions for all users with active bookings.
-
-    This runs before the booking window opens to ensure fresh cookies
-    are ready, avoiding delays during the critical booking time.
+    Legacy function - kept for manual triggering.
     """
     from app.models import db, User, Booking
     from app.scraper import WodBusterClient, LoginError
@@ -88,7 +261,7 @@ def refresh_all_sessions(app):
         for user in users_with_bookings:
             try:
                 logger.info(f'Refreshing session for {user.email}')
-                client = WodBusterClient(user.box_url)
+                client = WodBusterClient(user.effective_box_url)
 
                 # Always do a fresh login to get new cookies
                 wodbuster_password = user.get_wodbuster_password()
@@ -219,7 +392,7 @@ def _process_single_booking(booking, app):
         try:
             logger.info(f'Attempt {attempt}/{MAX_RETRY_ATTEMPTS} for booking {booking.id}')
 
-            client = WodBusterClient(user.box_url)
+            client = WodBusterClient(user.effective_box_url)
             cookies = user.get_wodbuster_cookies()
             session_valid = False
 
