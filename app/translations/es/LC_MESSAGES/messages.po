@@ -624,3 +624,6 @@ msgstr "Sesión expirada. Por favor, reconecta."
 
 msgid "Error detecting schedule"
 msgstr "Error detectando horario"
+
+msgid "You have access to multiple boxes. Please contact support."
+msgstr "Tienes acceso a múltiples boxes. Por favor, contacta con soporte."

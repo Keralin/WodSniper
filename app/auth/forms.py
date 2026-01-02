@@ -43,9 +43,6 @@ class RegisterForm(FlaskForm):
 
 class WodBusterConnectForm(FlaskForm):
     """Form to connect WodBuster account."""
-    box_url = StringField('Box URL', validators=[
-        DataRequired(message='Box URL is required'),
-    ], render_kw={'placeholder': 'https://yourbox.wodbuster.com'})
     wodbuster_email = StringField('WodBuster Email', validators=[
         DataRequired(message='Email is required'),
         Email(message='Invalid email')
@@ -54,14 +51,6 @@ class WodBusterConnectForm(FlaskForm):
         DataRequired(message='Password is required')
     ])
     submit = SubmitField('Connect')
-
-    def validate_box_url(self, box_url):
-        url = box_url.data.lower().strip()
-        if not url.startswith('https://'):
-            url = 'https://' + url
-        if 'wodbuster.com' not in url:
-            raise ValidationError('URL must be a WodBuster URL (e.g., https://yourbox.wodbuster.com)')
-        box_url.data = url
 
 
 class ForgotPasswordForm(FlaskForm):

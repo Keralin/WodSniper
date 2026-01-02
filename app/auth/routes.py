@@ -107,20 +107,23 @@ def reset_password(token):
 @login_required
 def connect_wodbuster():
     """Connect WodBuster account."""
+    from flask_babel import gettext as _
+
     form = WodBusterConnectForm()
 
-    # Pre-fill with existing data
-    if request.method == 'GET' and current_user.box_url:
-        form.box_url.data = current_user.box_url
+    # Pre-fill with existing email
+    if request.method == 'GET' and current_user.wodbuster_email:
         form.wodbuster_email.data = current_user.wodbuster_email
 
     if form.validate_on_submit():
-        box_url = form.box_url.data.strip()
         email = form.wodbuster_email.data
         password = form.wodbuster_password.data
 
         try:
-            # Test connection to WodBuster
+            # Auto-detect box URL from WodBuster
+            box_url = WodBusterClient.detect_box_url(email, password)
+
+            # Now login with the detected box URL
             client = WodBusterClient(box_url)
             client.login(email, password)
 
@@ -160,13 +163,18 @@ def connect_wodbuster():
 
             db.session.commit()
 
-            flash('Successfully connected to WodBuster', 'success')
+            flash(_('Successfully connected to WodBuster'), 'success')
             return redirect(url_for('booking.dashboard'))
 
         except LoginError as e:
-            flash(f'Connection error: {str(e)}', 'error')
+            error_msg = str(e)
+            if 'multiple boxes' in error_msg.lower():
+                flash(_('You have access to multiple boxes. Please contact support.'), 'error')
+            else:
+                flash(_('Invalid email or password'), 'error')
         except Exception as e:
-            flash(f'Unexpected error: {str(e)}', 'error')
+            current_app.logger.error(f'Connect error: {e}')
+            flash(_('An unexpected error occurred'), 'error')
 
     return render_template('auth/connect.html', form=form)
 

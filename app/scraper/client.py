@@ -924,3 +924,152 @@ class WodBusterClient:
 
         logger.warning(f'No class found matching type="{class_type}" at time={target_time}')
         return None
+
+    @classmethod
+    def detect_box_url(cls, email: str, password: str, flaresolverr_url: str = None) -> str:
+        """
+        Detect the box URL by logging in and following the redirect.
+
+        This method logs in to WodBuster and uses /account/roadtobox.aspx
+        to auto-detect which box the user belongs to.
+
+        Args:
+            email: WodBuster email
+            password: WodBuster password
+            flaresolverr_url: Optional FlareSolverr URL
+
+        Returns:
+            The box URL (e.g., https://teknix.wodbuster.com)
+
+        Raises:
+            LoginError: If login fails or user has multiple boxes
+        """
+        import os
+
+        flaresolverr_url = flaresolverr_url or os.environ.get('FLARESOLVERR_URL')
+
+        # Create a temporary session for login
+        scraper = cloudscraper.create_scraper(
+            browser={
+                'browser': 'chrome',
+                'platform': 'windows',
+                'desktop': True
+            }
+        )
+        scraper.headers.update({
+            'User-Agent': cls.USER_AGENT,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+        })
+
+        try:
+            # Phase 1: Get login page
+            login_url = f'{cls.BASE_URL}/account/login.aspx'
+            logger.info(f'Auto-detecting box URL for {email}')
+
+            resp = scraper.get(login_url, timeout=15)
+            resp.raise_for_status()
+
+            # Extract form tokens
+            soup = BeautifulSoup(resp.text, 'lxml')
+            tokens = {}
+            for inp in soup.find_all('input', attrs={'type': 'hidden'}):
+                name = inp.get('name')
+                if name:
+                    tokens[name] = inp.get('value', '')
+
+            if not tokens.get('__VIEWSTATEC') and not tokens.get('__VIEWSTATE'):
+                raise LoginError('Could not extract form tokens')
+
+            # Phase 2: Submit credentials
+            login_data = {
+                '__VIEWSTATE': tokens.get('__VIEWSTATE', ''),
+                '__VIEWSTATEC': tokens.get('__VIEWSTATEC', ''),
+                '__EVENTVALIDATION': tokens.get('__EVENTVALIDATION', ''),
+                '__EVENTTARGET': '',
+                '__EVENTARGUMENT': '',
+                'CSRFToken': tokens.get('CSRFToken', ''),
+                'ctl00$ctl00$body$body$CtlLogin$IoEmail': email,
+                'ctl00$ctl00$body$body$CtlLogin$IoPassword': password,
+                'ctl00$ctl00$body$body$CtlLogin$CtlAceptar': 'Aceptar',
+            }
+
+            # Add any additional ctl00 hidden fields
+            for key, value in tokens.items():
+                if key.startswith('ctl00$') and key not in login_data:
+                    login_data[key] = value
+
+            resp = scraper.post(login_url, data=login_data, timeout=15, allow_redirects=True)
+            resp.raise_for_status()
+
+            # Check for login errors
+            if 'usuario o contraseña incorrectos' in resp.text.lower() or 'email o contraseña incorrectos' in resp.text.lower():
+                raise LoginError('Invalid email or password')
+
+            # Phase 3: Handle device confirmation if needed
+            if 'recordar este dispositivo' in resp.text.lower() or 'ctlseguro' in resp.text.lower():
+                logger.info('Device confirmation required')
+                soup = BeautifulSoup(resp.text, 'lxml')
+                tokens = {}
+                for inp in soup.find_all('input', attrs={'type': 'hidden'}):
+                    name = inp.get('name')
+                    if name:
+                        tokens[name] = inp.get('value', '')
+
+                confirm_data = {
+                    '__VIEWSTATE': tokens.get('__VIEWSTATE', ''),
+                    '__VIEWSTATEC': tokens.get('__VIEWSTATEC', ''),
+                    '__EVENTVALIDATION': tokens.get('__EVENTVALIDATION', ''),
+                    '__EVENTTARGET': '',
+                    '__EVENTARGUMENT': '',
+                    'CSRFToken': tokens.get('CSRFToken', ''),
+                }
+
+                # Find the secure device button
+                secure_btn = soup.find('input', {'id': re.compile(r'CtlSeguro', re.I)})
+                if secure_btn:
+                    btn_name = secure_btn.get('name', '')
+                    if btn_name:
+                        confirm_data[btn_name] = secure_btn.get('value', 'Aceptar')
+
+                for key, value in tokens.items():
+                    if key.startswith('ctl00$') and key not in confirm_data:
+                        confirm_data[key] = value
+
+                resp = scraper.post(resp.url, data=confirm_data, timeout=15, allow_redirects=True)
+
+            # Phase 4: Get box URL via roadtobox
+            road_to_box = scraper.get(
+                f'{cls.BASE_URL}/account/roadtobox.aspx',
+                allow_redirects=False,
+                timeout=15
+            )
+
+            if 'Location' in road_to_box.headers:
+                location = road_to_box.headers['Location']
+
+                if 'login' in location.lower():
+                    raise LoginError('Login failed - redirected to login page')
+
+                # Extract box URL from redirect location
+                # Location format: https://boxname.wodbuster.com/user/default.aspx
+                if '/user' in location:
+                    box_url = location[:location.index('/user')]
+                elif '/athlete' in location:
+                    box_url = location[:location.index('/athlete')]
+                else:
+                    # Try to extract just the domain
+                    parsed = urlparse(location)
+                    box_url = f'{parsed.scheme}://{parsed.netloc}'
+
+                logger.info(f'Auto-detected box URL: {box_url}')
+                return box_url
+            else:
+                # No redirect - user might have multiple boxes
+                raise LoginError('Could not auto-detect box. User may have access to multiple boxes.')
+
+        except LoginError:
+            raise
+        except Exception as e:
+            logger.error(f'Error detecting box URL: {e}')
+            raise LoginError(f'Failed to detect box: {str(e)}')
