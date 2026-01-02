@@ -127,6 +127,13 @@
                 <span class="info-label">{{ _('Active Bookings') }}</span>
                 <span class="info-value">{{ bookings|selectattr('is_active')|list|length }}</span>
             </div>
+            {% if current_user.box %}
+            {% set day_names = [_('Monday'), _('Tuesday'), _('Wednesday'), _('Thursday'), _('Friday'), _('Saturday'), _('Sunday')] %}
+            <div class="info-item">
+                <span class="info-label">{{ _('Reservations Open') }}</span>
+                <span class="info-value">{{ day_names[current_user.box.booking_open_day] }} {{ '%02d'|format(current_user.box.booking_open_hour) }}:{{ '%02d'|format(current_user.box.booking_open_minute) }}</span>
+            </div>
+            {% endif %}
             <div class="info-item">
                 <span class="info-label">{{ _('Available Credits') }}</span>
                 <span class="info-value {% if account_info and account_info.available_classes is not none and account_info.available_classes <= 2 %}text-warning{% endif %}{% if account_info and account_info.available_classes == 0 %} text-danger{% endif %}">

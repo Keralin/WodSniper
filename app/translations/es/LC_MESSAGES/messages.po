@@ -621,3 +621,6 @@ msgstr "Ejemplo: Si tu box abre reservas el domingo a las 14:00 hora española, 
 
 msgid "Save Schedule"
 msgstr "Guardar Horario"
+
+msgid "Reservations Open"
+msgstr "Apertura de Reservas"
