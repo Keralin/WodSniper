@@ -627,3 +627,18 @@ msgstr "Apertura de Reservas"
 
 msgid "Auto-detect from WodBuster"
 msgstr "Auto-detectar desde WodBuster"
+
+msgid "Schedule detected!"
+msgstr "¡Horario detectado!"
+
+msgid "Could not detect schedule. Classes may already be open for booking."
+msgstr "No se pudo detectar el horario. Las clases pueden estar ya abiertas para reservar."
+
+msgid "No box configured"
+msgstr "No hay box configurado"
+
+msgid "Session expired. Please reconnect."
+msgstr "Sesión expirada. Por favor, reconecta."
+
+msgid "Error detecting schedule"
+msgstr "Error detectando horario"

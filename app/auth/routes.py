@@ -247,12 +247,14 @@ def explore_endpoints():
 @login_required
 def detect_box_schedule():
     """Auto-detect box schedule from WodBuster."""
+    from flask_babel import gettext as _
+
     if not current_user.effective_box_url:
-        flash('Please connect your WodBuster account first', 'warning')
+        flash(_('Please connect your WodBuster account first'), 'warning')
         return redirect(url_for('auth.connect_wodbuster'))
 
     if not current_user.box:
-        flash('No box configured', 'error')
+        flash(_('No box configured'), 'error')
         return redirect(url_for('auth.connect_wodbuster'))
 
     try:
@@ -260,7 +262,7 @@ def detect_box_schedule():
         cookies = current_user.get_wodbuster_cookies()
 
         if not cookies or not client.restore_session(cookies):
-            flash('Session expired. Please reconnect.', 'warning')
+            flash(_('Session expired. Please reconnect.'), 'warning')
             return redirect(url_for('auth.connect_wodbuster'))
 
         # Detect when reservations open
@@ -273,15 +275,12 @@ def detect_box_schedule():
             current_user.box.booking_open_minute = booking_info['minute']
             db.session.commit()
 
-            day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-            day_name = day_names[booking_info['day_of_week']]
-
-            flash(f'Schedule detected: {day_name} {booking_info["hour"]:02d}:{booking_info["minute"]:02d} UTC', 'success')
+            flash(_('Schedule detected!'), 'success')
         else:
-            flash('Could not detect schedule. Classes may already be open for booking.', 'warning')
+            flash(_('Could not detect schedule. Classes may already be open for booking.'), 'warning')
 
     except Exception as e:
-        flash(f'Error detecting schedule: {str(e)}', 'error')
+        flash(_('Error detecting schedule') + f': {str(e)}', 'error')
 
     return redirect(url_for('auth.connect_wodbuster'))
 
