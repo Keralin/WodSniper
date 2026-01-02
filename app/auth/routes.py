@@ -303,38 +303,5 @@ def detect_box_schedule():
     return redirect(url_for('auth.connect_wodbuster'))
 
 
-@auth_bp.route('/update-box-schedule', methods=['POST'])
-@login_required
-def update_box_schedule():
-    """Update the box's booking schedule configuration."""
-    if not current_user.box:
-        flash('No box connected', 'error')
-        return redirect(url_for('auth.connect_wodbuster'))
-
-    try:
-        booking_open_day = int(request.form.get('booking_open_day', 6))
-        booking_open_hour = int(request.form.get('booking_open_hour', 13))
-        booking_open_minute = int(request.form.get('booking_open_minute', 0))
-
-        # Validate
-        if not (0 <= booking_open_day <= 6):
-            raise ValueError('Invalid day')
-        if not (0 <= booking_open_hour <= 23):
-            raise ValueError('Invalid hour')
-        if not (0 <= booking_open_minute <= 59):
-            raise ValueError('Invalid minute')
-
-        current_user.box.booking_open_day = booking_open_day
-        current_user.box.booking_open_hour = booking_open_hour
-        current_user.box.booking_open_minute = booking_open_minute
-
-        db.session.commit()
-
-        flash(f'Schedule updated: {current_user.box.opening_time_display}', 'success')
-
-    except (ValueError, TypeError) as e:
-        flash(f'Invalid schedule values: {e}', 'error')
-
-    return redirect(url_for('auth.connect_wodbuster'))
 
 

@@ -28,18 +28,6 @@ class Box(db.Model):
     # Relationships
     users = db.relationship('User', backref='box', lazy='dynamic')
 
-    DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-
-    @property
-    def day_name(self):
-        """Return the day name for booking_open_day."""
-        return self.DAY_NAMES[self.booking_open_day]
-
-    @property
-    def opening_time_display(self):
-        """Return formatted opening time (e.g., 'Sunday 14:00')."""
-        return f"{self.day_name} {self.booking_open_hour:02d}:{self.booking_open_minute:02d} UTC"
-
     def __repr__(self):
         return f'<Box {self.name}>'
 

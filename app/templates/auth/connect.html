@@ -60,11 +60,16 @@
     {% if current_user.box %}
     <div class="auth-card" style="margin-top: var(--space-lg);">
         <h2>{{ _('Booking Schedule') }}</h2>
-        <p class="auth-description">
-            {{ _('Configure when your box opens reservations each week.') }}
-        </p>
 
-        <div style="margin-bottom: var(--space-lg); text-align: center;">
+        {% set day_names = [_('Monday'), _('Tuesday'), _('Wednesday'), _('Thursday'), _('Friday'), _('Saturday'), _('Sunday')] %}
+        <div class="info-grid" style="margin-bottom: var(--space-lg);">
+            <div class="info-item">
+                <span class="info-label">{{ _('Reservations Open') }}</span>
+                <span class="info-value">{{ day_names[current_user.box.booking_open_day] }} {{ '%02d'|format(current_user.box.booking_open_hour) }}:{{ '%02d'|format(current_user.box.booking_open_minute) }} UTC</span>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
             <a href="{{ url_for('auth.detect_box_schedule') }}" class="btn btn-secondary">
                 {{ _('Re-detect schedule') }}
             </a>
@@ -72,53 +77,6 @@
                 {{ _('Use if your box changed their opening schedule') }}
             </p>
         </div>
-
-        <form method="POST" action="{{ url_for('auth.update_box_schedule') }}" class="form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-            <div class="form-group">
-                <label for="booking_open_day">{{ _('Day reservations open') }}</label>
-                <select name="booking_open_day" id="booking_open_day" class="form-control">
-                    <option value="0" {% if current_user.box.booking_open_day == 0 %}selected{% endif %}>{{ _('Monday') }}</option>
-                    <option value="1" {% if current_user.box.booking_open_day == 1 %}selected{% endif %}>{{ _('Tuesday') }}</option>
-                    <option value="2" {% if current_user.box.booking_open_day == 2 %}selected{% endif %}>{{ _('Wednesday') }}</option>
-                    <option value="3" {% if current_user.box.booking_open_day == 3 %}selected{% endif %}>{{ _('Thursday') }}</option>
-                    <option value="4" {% if current_user.box.booking_open_day == 4 %}selected{% endif %}>{{ _('Friday') }}</option>
-                    <option value="5" {% if current_user.box.booking_open_day == 5 %}selected{% endif %}>{{ _('Saturday') }}</option>
-                    <option value="6" {% if current_user.box.booking_open_day == 6 %}selected{% endif %}>{{ _('Sunday') }}</option>
-                </select>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group" style="flex: 1;">
-                    <label for="booking_open_hour">{{ _('Hour (UTC)') }}</label>
-                    <select name="booking_open_hour" id="booking_open_hour" class="form-control">
-                        {% for h in range(24) %}
-                        <option value="{{ h }}" {% if current_user.box.booking_open_hour == h %}selected{% endif %}>{{ '%02d'|format(h) }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group" style="flex: 1;">
-                    <label for="booking_open_minute">{{ _('Minute') }}</label>
-                    <select name="booking_open_minute" id="booking_open_minute" class="form-control">
-                        {% for m in range(0, 60, 5) %}
-                        <option value="{{ m }}" {% if current_user.box.booking_open_minute == m %}selected{% endif %}>{{ '%02d'|format(m) }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            {% set day_names = [_('Monday'), _('Tuesday'), _('Wednesday'), _('Thursday'), _('Friday'), _('Saturday'), _('Sunday')] %}
-            <span class="form-hint">
-                {{ _('Current setting:') }} {{ day_names[current_user.box.booking_open_day] }} {{ '%02d'|format(current_user.box.booking_open_hour) }}:{{ '%02d'|format(current_user.box.booking_open_minute) }} UTC
-                <br>
-                {{ _('Example: If your box opens reservations on Sunday at 14:00 Spanish time, set Sunday 13:00 UTC.') }}
-            </span>
-
-            <div class="form-group" style="margin-top: var(--space-md); text-align: center;">
-                <button type="submit" class="btn btn-primary">{{ _('Save Schedule') }}</button>
-            </div>
-        </form>
     </div>
     {% endif %}
 </div>
