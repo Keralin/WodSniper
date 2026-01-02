@@ -838,6 +838,64 @@ class WodBusterClient:
                 'error': str(e)
             }
 
+    def get_booking_open_time(self, days_ahead: int = 7) -> Optional[Dict[str, Any]]:
+        """
+        Get when reservations open for future classes.
+
+        Checks future dates to find one with SegundosHastaPublicacion,
+        which tells us when that day's classes become bookable.
+
+        Returns:
+            Dict with 'opens_at' (datetime), 'seconds_until', 'day_of_week', 'hour', 'minute'
+            or None if unable to determine.
+        """
+        if not self._logged_in:
+            raise SessionExpiredError('Not logged in')
+
+        today = datetime.now()
+
+        # Check each day ahead to find one with SegundosHastaPublicacion
+        for i in range(1, days_ahead + 1):
+            target_date = today + timedelta(days=i)
+
+            try:
+                # Get raw response to access SegundosHastaPublicacion
+                from datetime import timezone
+                target_date_only = target_date.date()
+                midnight_utc = datetime.combine(target_date_only, datetime.min.time()).replace(tzinfo=timezone.utc)
+                epoch = int(midnight_utc.timestamp())
+
+                url = f'{self.box_url}/athlete/handlers/LoadClass.ashx'
+                params = {'ticks': epoch}
+
+                response = self.session.get(url, params=params, timeout=self.timeout)
+                response.raise_for_status()
+
+                data = response.json()
+
+                seconds_until = data.get('SegundosHastaPublicacion')
+
+                if seconds_until and seconds_until > 0:
+                    # Calculate when reservations open
+                    opens_at = datetime.now() + timedelta(seconds=seconds_until)
+
+                    logger.info(f'Found booking open time: {opens_at} (in {seconds_until:.0f} seconds)')
+
+                    return {
+                        'opens_at': opens_at,
+                        'seconds_until': seconds_until,
+                        'day_of_week': opens_at.weekday(),
+                        'hour': opens_at.hour,
+                        'minute': opens_at.minute,
+                        'target_date': target_date_only.isoformat(),
+                    }
+
+            except Exception as e:
+                logger.warning(f'Error checking booking open time for {target_date}: {e}')
+                continue
+
+        return None
+
     def find_class(
         self,
         date: datetime,

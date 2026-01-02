@@ -243,6 +243,49 @@ def explore_endpoints():
         return {'error': str(e)}, 500
 
 
+@auth_bp.route('/detect-box-schedule')
+@login_required
+def detect_box_schedule():
+    """Auto-detect box schedule from WodBuster."""
+    if not current_user.effective_box_url:
+        flash('Please connect your WodBuster account first', 'warning')
+        return redirect(url_for('auth.connect_wodbuster'))
+
+    if not current_user.box:
+        flash('No box configured', 'error')
+        return redirect(url_for('auth.connect_wodbuster'))
+
+    try:
+        client = WodBusterClient(current_user.effective_box_url)
+        cookies = current_user.get_wodbuster_cookies()
+
+        if not cookies or not client.restore_session(cookies):
+            flash('Session expired. Please reconnect.', 'warning')
+            return redirect(url_for('auth.connect_wodbuster'))
+
+        # Detect when reservations open
+        booking_info = client.get_booking_open_time()
+
+        if booking_info:
+            # Update box schedule
+            current_user.box.booking_open_day = booking_info['day_of_week']
+            current_user.box.booking_open_hour = booking_info['hour']
+            current_user.box.booking_open_minute = booking_info['minute']
+            db.session.commit()
+
+            day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+            day_name = day_names[booking_info['day_of_week']]
+
+            flash(f'Schedule detected: {day_name} {booking_info["hour"]:02d}:{booking_info["minute"]:02d} UTC', 'success')
+        else:
+            flash('Could not detect schedule. Classes may already be open for booking.', 'warning')
+
+    except Exception as e:
+        flash(f'Error detecting schedule: {str(e)}', 'error')
+
+    return redirect(url_for('auth.connect_wodbuster'))
+
+
 @auth_bp.route('/update-box-schedule', methods=['POST'])
 @login_required
 def update_box_schedule():

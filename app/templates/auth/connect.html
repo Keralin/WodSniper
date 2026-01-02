@@ -64,6 +64,12 @@
             {{ _('Configure when your box opens reservations each week.') }}
         </p>
 
+        <div style="margin-bottom: var(--space-lg); text-align: center;">
+            <a href="{{ url_for('auth.detect_box_schedule') }}" class="btn btn-secondary">
+                {{ _('Auto-detect from WodBuster') }}
+            </a>
+        </div>
+
         <form method="POST" action="{{ url_for('auth.update_box_schedule') }}" class="form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 

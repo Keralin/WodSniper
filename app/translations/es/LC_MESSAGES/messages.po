@@ -624,3 +624,6 @@ msgstr "Guardar Horario"
 
 msgid "Reservations Open"
 msgstr "Apertura de Reservas"
+
+msgid "Auto-detect from WodBuster"
+msgstr "Auto-detectar desde WodBuster"
