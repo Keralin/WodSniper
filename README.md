@@ -1,25 +1,28 @@
-# WodSniper 🎯
+# WodSniper
 
-Automated class booking system for CrossFit boxes using WodBuster platform.
+Automatic class booking system for CrossFit boxes using the WodBuster platform.
 
 ## Features
 
-- **Automatic Booking**: Schedule your weekly classes once, WodSniper books them automatically when the booking window opens (Sundays at 13:00)
-- **Smart Scheduling**: Dynamic class selection based on real-time availability from WodBuster
-- **Email Notifications**: Receive summaries after automatic bookings with success/failure details
-- **Credit Monitoring**: Track your available class credits with low-balance warnings
+- **Automatic Booking**: Set up your weekly classes once, WodSniper books them automatically when the reservation window opens
+- **Auto-detect Schedule**: Automatically detects when your box opens reservations (using WodBuster's `SegundosHastaPublicacion`)
+- **Per-Box Configuration**: Each box has its own opening schedule, shared between users of the same box
+- **Email Notifications**: Receive summaries after automatic bookings
+- **Credit Monitoring**: Track your available classes with low balance warnings
 - **Manual Booking**: Book classes instantly with one click
 - **Reservation Management**: View and cancel your upcoming reservations
+- **Special Day Detection**: Detects reduced schedules (holidays) and shows the typical schedule as reference
 - **Multi-language**: Spanish and English with automatic browser detection
+- **Modern UI**: Dark theme with glassmorphism effects
 
 ## Tech Stack
 
 - **Backend**: Flask (Python 3.11+)
 - **Database**: SQLAlchemy (SQLite/PostgreSQL)
-- **Scheduler**: APScheduler for cron-like background tasks
+- **Scheduler**: APScheduler for background tasks
 - **Web Scraping**: Cloudscraper + FlareSolverr (Cloudflare bypass)
 - **Auth**: Flask-Login with secure session management
-- **Email**: Flask-Mail with SMTP support
+- **Email**: Resend API
 - **i18n**: Flask-Babel
 
 ## Architecture
@@ -30,25 +33,31 @@ WodSniper/
 │   ├── auth/           # Authentication blueprint
 │   ├── booking/        # Booking management blueprint
 │   ├── scraper/        # WodBuster API client
-│   ├── scheduler/      # Background job scheduling
+│   ├── scheduler/      # Background task scheduling
 │   ├── templates/      # Jinja2 templates
 │   ├── translations/   # i18n (es, en)
-│   └── static/         # CSS, JS, images
+│   ├── static/         # CSS, JS, images
+│   └── models.py       # Models: User, Box, Booking, BookingLog
 ├── Dockerfile
 ├── docker-compose.yml
-├── run.py              # Application entry point
+├── run.py              # Entry point
 └── requirements.txt
 ```
 
-## Key Technical Challenges Solved
+## Data Models
 
-1. **Cloudflare Bypass**: WodBuster uses Cloudflare protection. Solved using cloudscraper with FlareSolverr as fallback.
+- **Box**: Box configuration (URL, reservation opening schedule)
+- **User**: WodSniper user, linked to a Box
+- **Booking**: Scheduled booking (day, time, class type)
+- **BookingLog**: Booking attempt history
 
-2. **ASP.NET Form Handling**: WodBuster uses complex ASP.NET forms with ViewState, EventValidation, and CSRF tokens. Implemented robust token extraction and session management.
+## How the Scheduler Works
 
-3. **Precise Timing**: Bookings open at exactly 13:00. Implemented precise waiting with busy-wait for sub-second accuracy.
-
-4. **Session Persistence**: WodBuster sessions expire. Implemented cookie serialization, automatic session restoration, and encrypted credential storage for auto re-login.
+1. Every minute, the scheduler checks which boxes have their reservation window opening in 5 minutes
+2. 10 minutes before: refreshes user sessions for the box
+3. 5 minutes before: waits until the exact time
+4. At the exact time: processes all active bookings for the box
+5. Sends email notifications with results
 
 ## Local Development
 
@@ -94,11 +103,12 @@ Services:
 1. Create project from GitHub repo
 2. Add PostgreSQL database
 3. (Optional) Add FlareSolverr service
-4. Set environment variables:
+4. Configure environment variables:
    - `SECRET_KEY` - Secure random string
    - `FLARESOLVERR_URL` - If using FlareSolverr
-   - `MAIL_*` - For email notifications
-5. Set health check path: `/health`
+   - `RESEND_API_KEY` - For email notifications
+   - `CREDENTIAL_KEY` - Key for encrypting WodBuster credentials
+5. Configure health check: `/health`
 
 ## Environment Variables
 
@@ -106,7 +116,7 @@ See `.env.example` for all available options.
 
 ## Disclaimer
 
-This project is for educational and personal use only. Users are responsible for ensuring their use complies with WodBuster's Terms of Service. The authors assume no liability for any consequences arising from the use of this software.
+This project is for educational and personal use only. Users are responsible for ensuring their use complies with WodBuster's Terms of Service. The authors assume no responsibility for consequences arising from the use of this software.
 
 ## License
 
