@@ -601,32 +601,8 @@ msgstr "Especial"
 msgid "Booking Schedule"
 msgstr "Horario de Reservas"
 
-msgid "Configure when your box opens reservations each week."
-msgstr "Configura cuándo tu box abre las reservas cada semana."
-
-msgid "Day reservations open"
-msgstr "Día que abren las reservas"
-
-msgid "Hour (UTC)"
-msgstr "Hora (UTC)"
-
-msgid "Minute"
-msgstr "Minuto"
-
-msgid "Current setting:"
-msgstr "Configuración actual:"
-
-msgid "Example: If your box opens reservations on Sunday at 14:00 Spanish time, set Sunday 13:00 UTC."
-msgstr "Ejemplo: Si tu box abre reservas el domingo a las 14:00 hora española, configura Domingo 13:00 UTC."
-
-msgid "Save Schedule"
-msgstr "Guardar Horario"
-
 msgid "Reservations Open"
 msgstr "Apertura de Reservas"
-
-msgid "Auto-detect from WodBuster"
-msgstr "Auto-detectar desde WodBuster"
 
 msgid "Re-detect schedule"
 msgstr "Actualizar horario"
