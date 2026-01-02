@@ -66,8 +66,11 @@
 
         <div style="margin-bottom: var(--space-lg); text-align: center;">
             <a href="{{ url_for('auth.detect_box_schedule') }}" class="btn btn-secondary">
-                {{ _('Auto-detect from WodBuster') }}
+                {{ _('Re-detect schedule') }}
             </a>
+            <p class="form-hint" style="margin-top: var(--space-sm);">
+                {{ _('Use if your box changed their opening schedule') }}
+            </p>
         </div>
 
         <form method="POST" action="{{ url_for('auth.update_box_schedule') }}" class="form">

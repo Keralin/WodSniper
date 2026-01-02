@@ -140,6 +140,24 @@ def connect_wodbuster():
             current_user.set_wodbuster_password(password)  # Save encrypted password for auto re-login
             current_user.set_wodbuster_cookies(client.get_cookies())
 
+            # Auto-detect booking schedule if not already configured
+            # (only for new boxes or boxes with default schedule)
+            is_default_schedule = (
+                box.booking_open_day == 6 and
+                box.booking_open_hour == 13 and
+                box.booking_open_minute == 0
+            )
+            if is_default_schedule:
+                try:
+                    booking_info = client.get_booking_open_time()
+                    if booking_info:
+                        box.booking_open_day = booking_info['day_of_week']
+                        box.booking_open_hour = booking_info['hour']
+                        box.booking_open_minute = booking_info['minute']
+                        current_app.logger.info(f'Auto-detected schedule for {box.name}: day={booking_info["day_of_week"]}, hour={booking_info["hour"]}, minute={booking_info["minute"]}')
+                except Exception as e:
+                    current_app.logger.warning(f'Could not auto-detect schedule: {e}')
+
             db.session.commit()
 
             flash('Successfully connected to WodBuster', 'success')

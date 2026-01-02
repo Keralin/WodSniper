@@ -628,6 +628,12 @@ msgstr "Apertura de Reservas"
 msgid "Auto-detect from WodBuster"
 msgstr "Auto-detectar desde WodBuster"
 
+msgid "Re-detect schedule"
+msgstr "Actualizar horario"
+
+msgid "Use if your box changed their opening schedule"
+msgstr "Usa si tu box ha cambiado su horario de apertura"
+
 msgid "Schedule detected!"
 msgstr "¡Horario detectado!"
 
