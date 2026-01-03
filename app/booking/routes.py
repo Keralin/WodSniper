@@ -144,8 +144,10 @@ def toggle_booking(booking_id):
     booking.is_active = not booking.is_active
     db.session.commit()
 
-    status = 'activated' if booking.is_active else 'deactivated'
-    flash(f'Booking {status}', 'success')
+    if booking.is_active:
+        flash(_('Booking activated'), 'success')
+    else:
+        flash(_('Booking deactivated'), 'success')
     return redirect(url_for('booking.dashboard'))
 
 
