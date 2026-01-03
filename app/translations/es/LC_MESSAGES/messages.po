@@ -639,3 +639,9 @@ msgstr "Error de conexión"
 
 msgid "Session expired. Please reconnect your WodBuster account."
 msgstr "Sesión expirada. Por favor, reconecta tu cuenta de WodBuster."
+
+msgid "Booking activated"
+msgstr "Reserva activada"
+
+msgid "Booking deactivated"
+msgstr "Reserva desactivada"
