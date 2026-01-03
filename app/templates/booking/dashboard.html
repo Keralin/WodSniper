@@ -131,7 +131,7 @@
             {% set day_names = [_('Monday'), _('Tuesday'), _('Wednesday'), _('Thursday'), _('Friday'), _('Saturday'), _('Sunday')] %}
             <div class="info-item">
                 <span class="info-label">{{ _('Reservations Open') }}</span>
-                <span class="info-value">{{ day_names[current_user.box.booking_open_day] }} {{ '%02d'|format(current_user.box.booking_open_hour) }}:{{ '%02d'|format(current_user.box.booking_open_minute) }}</span>
+                <span class="info-value">{{ day_names[current_user.box.booking_open_day] }} {{ '%02d'|format(current_user.box.booking_open_hour) }}:{{ '%02d'|format(current_user.box.booking_open_minute) }} UTC</span>
             </div>
             {% endif %}
             <div class="info-item">
