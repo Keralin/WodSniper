@@ -182,6 +182,12 @@ msgstr "Guardar"
 msgid "Cancel"
 msgstr "Cancelar"
 
+msgid "Connect"
+msgstr "Conectar"
+
+msgid "This email is already registered"
+msgstr "Este email ya está registrado"
+
 # Landing page
 msgid "Automatic Class Booking"
 msgstr "Reserva Automática de Clases"
@@ -621,3 +627,15 @@ msgstr "Error detectando horario"
 
 msgid "You have access to multiple boxes. Please contact support."
 msgstr "Tienes acceso a múltiples boxes. Por favor, contacta con soporte."
+
+msgid "Connection verified successfully"
+msgstr "Conexión verificada correctamente"
+
+msgid "Session expired. Please reconnect your account."
+msgstr "Sesión expirada. Por favor, reconecta tu cuenta."
+
+msgid "Connection error"
+msgstr "Error de conexión"
+
+msgid "Session expired. Please reconnect your WodBuster account."
+msgstr "Sesión expirada. Por favor, reconecta tu cuenta de WodBuster."

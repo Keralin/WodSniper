@@ -1,6 +1,7 @@
 from datetime import datetime
 from flask import render_template, redirect, url_for, flash, request, current_app, abort
 from flask_login import login_user, logout_user, login_required, current_user
+from flask_babel import gettext as _
 
 from app.auth import auth_bp
 from app.auth.forms import LoginForm, RegisterForm, WodBusterConnectForm, ForgotPasswordForm, ResetPasswordForm
@@ -29,7 +30,7 @@ def login():
                 return redirect(next_page)
             return redirect(url_for('booking.dashboard'))
 
-        flash('Invalid email or password', 'error')
+        flash(_('Invalid email or password'), 'error')
 
     return render_template('auth/login.html', form=form)
 
@@ -48,7 +49,7 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        flash('Account created successfully. Now connect your WodBuster account.', 'success')
+        flash(_('Account created successfully. Now connect your WodBuster account.'), 'success')
         login_user(user)
         return redirect(url_for('auth.connect_wodbuster'))
 
@@ -60,7 +61,7 @@ def register():
 def logout():
     """Logout user."""
     logout_user()
-    flash('You have been logged out', 'info')
+    flash(_('You have been logged out'), 'info')
     return redirect(url_for('auth.login'))
 
 
@@ -76,7 +77,7 @@ def forgot_password():
         if user:
             send_password_reset_email(user)
         # Always show success message to prevent email enumeration
-        flash('If an account with that email exists, a password reset link has been sent.', 'info')
+        flash(_('If an account with that email exists, a password reset link has been sent.'), 'info')
         return redirect(url_for('auth.login'))
 
     return render_template('auth/forgot_password.html', form=form)
@@ -90,14 +91,14 @@ def reset_password(token):
 
     user = User.verify_reset_token(token)
     if not user:
-        flash('Invalid or expired reset link. Please request a new one.', 'error')
+        flash(_('Invalid or expired reset link. Please request a new one.'), 'error')
         return redirect(url_for('auth.forgot_password'))
 
     form = ResetPasswordForm()
     if form.validate_on_submit():
         user.set_password(form.password.data)
         db.session.commit()
-        flash('Your password has been reset. You can now log in.', 'success')
+        flash(_('Your password has been reset. You can now log in.'), 'success')
         return redirect(url_for('auth.login'))
 
     return render_template('auth/reset_password.html', form=form)
@@ -107,8 +108,6 @@ def reset_password(token):
 @login_required
 def connect_wodbuster():
     """Connect WodBuster account."""
-    from flask_babel import gettext as _
-
     form = WodBusterConnectForm()
 
     # Pre-fill with existing email
@@ -184,7 +183,7 @@ def connect_wodbuster():
 def test_connection():
     """Test WodBuster connection."""
     if not current_user.effective_box_url:
-        flash('Please connect your WodBuster account first', 'warning')
+        flash(_('Please connect your WodBuster account first'), 'warning')
         return redirect(url_for('auth.connect_wodbuster'))
 
     try:
@@ -192,13 +191,13 @@ def test_connection():
         cookies = current_user.get_wodbuster_cookies()
 
         if cookies and client.restore_session(cookies):
-            flash('Connection verified successfully', 'success')
+            flash(_('Connection verified successfully'), 'success')
         else:
-            flash('Session expired. Please reconnect your account.', 'warning')
+            flash(_('Session expired. Please reconnect your account.'), 'warning')
             return redirect(url_for('auth.connect_wodbuster'))
 
     except Exception as e:
-        flash(f'Connection error: {str(e)}', 'error')
+        flash(_('Connection error') + f': {str(e)}', 'error')
 
     return redirect(url_for('booking.dashboard'))
 

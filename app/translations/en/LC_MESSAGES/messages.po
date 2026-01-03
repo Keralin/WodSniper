@@ -182,6 +182,12 @@ msgstr "Save"
 msgid "Cancel"
 msgstr "Cancel"
 
+msgid "Connect"
+msgstr "Connect"
+
+msgid "This email is already registered"
+msgstr "This email is already registered"
+
 # Landing page
 msgid "Automatic Class Booking"
 msgstr "Automatic Class Booking"
@@ -590,3 +596,46 @@ msgstr "Your selection"
 
 msgid "Special"
 msgstr "Special"
+
+# Box schedule configuration
+msgid "Booking Schedule"
+msgstr "Booking Schedule"
+
+msgid "Reservations Open"
+msgstr "Reservations Open"
+
+msgid "Re-detect schedule"
+msgstr "Re-detect schedule"
+
+msgid "Use if your box changed their opening schedule"
+msgstr "Use if your box changed their opening schedule"
+
+msgid "Schedule detected!"
+msgstr "Schedule detected!"
+
+msgid "Could not detect schedule. Classes may already be open for booking."
+msgstr "Could not detect schedule. Classes may already be open for booking."
+
+msgid "No box configured"
+msgstr "No box configured"
+
+msgid "Session expired. Please reconnect."
+msgstr "Session expired. Please reconnect."
+
+msgid "Error detecting schedule"
+msgstr "Error detecting schedule"
+
+msgid "You have access to multiple boxes. Please contact support."
+msgstr "You have access to multiple boxes. Please contact support."
+
+msgid "Connection verified successfully"
+msgstr "Connection verified successfully"
+
+msgid "Session expired. Please reconnect your account."
+msgstr "Session expired. Please reconnect your account."
+
+msgid "Connection error"
+msgstr "Connection error"
+
+msgid "Session expired. Please reconnect your WodBuster account."
+msgstr "Session expired. Please reconnect your WodBuster account."

@@ -102,7 +102,7 @@ def dashboard():
 def new_booking():
     """Create a new scheduled booking."""
     if not current_user.effective_box_url:
-        flash('Please connect your WodBuster account first', 'warning')
+        flash(_('Please connect your WodBuster account first'), 'warning')
         return redirect(url_for('auth.connect_wodbuster'))
 
     form = BookingForm()
@@ -117,7 +117,7 @@ def new_booking():
         ).first()
 
         if existing:
-            flash('You already have a booking scheduled for this day/time/class', 'error')
+            flash(_('You already have a booking scheduled for this day/time/class'), 'error')
             return render_template('booking/new.html', form=form)
 
         booking = Booking(
@@ -158,7 +158,7 @@ def delete_booking(booking_id):
     db.session.delete(booking)
     db.session.commit()
 
-    flash('Booking deleted', 'success')
+    flash(_('Booking deleted'), 'success')
     return redirect(url_for('booking.dashboard'))
 
 
@@ -303,7 +303,7 @@ def book_now(booking_id):
     booking = Booking.query.filter_by(id=booking_id, user_id=current_user.id).first_or_404()
 
     if not current_user.effective_box_url:
-        flash('WodBuster not connected', 'error')
+        flash(_('WodBuster not connected'), 'error')
         return redirect(url_for('booking.dashboard'))
 
     try:
@@ -311,7 +311,7 @@ def book_now(booking_id):
         cookies = current_user.get_wodbuster_cookies()
 
         if not cookies or not client.restore_session(cookies):
-            flash('Session expired. Please reconnect your WodBuster account.', 'warning')
+            flash(_('Session expired. Please reconnect your WodBuster account.'), 'warning')
             return redirect(url_for('auth.connect_wodbuster'))
 
         # Calculate target date (next occurrence of the booking day)
@@ -403,7 +403,7 @@ def booking_logs(booking_id):
 def my_reservations():
     """View user's upcoming reservations from WodBuster."""
     if not current_user.effective_box_url:
-        flash('WodBuster not connected', 'warning')
+        flash(_('WodBuster not connected'), 'warning')
         return redirect(url_for('auth.connect_wodbuster'))
 
     reservations = []
@@ -414,13 +414,13 @@ def my_reservations():
         cookies = current_user.get_wodbuster_cookies()
 
         if not cookies or not client.restore_session(cookies):
-            flash('Session expired. Please reconnect your WodBuster account.', 'warning')
+            flash(_('Session expired. Please reconnect your WodBuster account.'), 'warning')
             return redirect(url_for('auth.connect_wodbuster'))
 
         reservations = client.get_my_reservations(days_ahead=7)
 
     except SessionExpiredError:
-        flash('Session expired. Please reconnect your WodBuster account.', 'warning')
+        flash(_('Session expired. Please reconnect your WodBuster account.'), 'warning')
         return redirect(url_for('auth.connect_wodbuster'))
     except Exception as e:
         error = str(e)
@@ -520,7 +520,7 @@ def debug_account():
 def cancel_reservation(class_id, booking_id):
     """Cancel a reservation on WodBuster."""
     if not current_user.effective_box_url:
-        flash('WodBuster not connected', 'error')
+        flash(_('WodBuster not connected'), 'error')
         return redirect(url_for('booking.my_reservations'))
 
     try:
@@ -528,16 +528,16 @@ def cancel_reservation(class_id, booking_id):
         cookies = current_user.get_wodbuster_cookies()
 
         if not cookies or not client.restore_session(cookies):
-            flash('Session expired. Please reconnect your WodBuster account.', 'warning')
+            flash(_('Session expired. Please reconnect your WodBuster account.'), 'warning')
             return redirect(url_for('auth.connect_wodbuster'))
 
         if client.cancel_booking(class_id, booking_id):
-            flash('Reservation cancelled successfully', 'success')
+            flash(_('Reservation cancelled successfully'), 'success')
         else:
-            flash('Failed to cancel reservation', 'error')
+            flash(_('Failed to cancel reservation'), 'error')
 
     except SessionExpiredError:
-        flash('Session expired. Please reconnect your WodBuster account.', 'warning')
+        flash(_('Session expired. Please reconnect your WodBuster account.'), 'warning')
         return redirect(url_for('auth.connect_wodbuster'))
     except Exception as e:
         flash(f'Error cancelling reservation: {str(e)}', 'error')
