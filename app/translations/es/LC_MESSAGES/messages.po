@@ -219,8 +219,8 @@ msgstr "Cómo funciona"
 msgid "Connect your WodBuster"
 msgstr "Conecta tu WodBuster"
 
-msgid "Enter your box URL and credentials"
-msgstr "Introduce la URL de tu box y credenciales"
+msgid "Enter your WodBuster credentials"
+msgstr "Introduce tus credenciales de WodBuster"
 
 msgid "Configure your classes"
 msgstr "Configura tus clases"
