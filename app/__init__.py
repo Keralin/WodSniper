@@ -96,6 +96,7 @@ def _init_scheduler_once(app):
 def register_error_handlers(app):
     """Register error handlers."""
     from flask import render_template
+    import traceback
 
     @app.errorhandler(404)
     def not_found_error(error):
@@ -104,4 +105,6 @@ def register_error_handlers(app):
     @app.errorhandler(500)
     def internal_error(error):
         db.session.rollback()
+        app.logger.error(f'500 Error: {error}')
+        app.logger.error(traceback.format_exc())
         return render_template('errors/500.html'), 500
