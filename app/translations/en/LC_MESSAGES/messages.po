@@ -261,12 +261,6 @@ msgstr "Connected to:"
 msgid "Verify"
 msgstr "Verify"
 
-msgid "Box URL"
-msgstr "Box URL"
-
-msgid "Example:"
-msgstr "Example:"
-
 msgid "WodBuster Email"
 msgstr "WodBuster Email"
 
