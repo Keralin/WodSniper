@@ -15,7 +15,7 @@ _booking_lock = threading.Lock()
 _last_booking_time = None
 BOOKING_INTERVAL = 0.5  # Minimum seconds between bookings
 MAX_RETRY_ATTEMPTS = 3  # Maximum retry attempts per booking
-RETRY_DELAY = 2  # Seconds between retry attempts
+RETRY_DELAY = 1  # Seconds between retry attempts
 
 
 def init_scheduler(app):
