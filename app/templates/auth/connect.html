@@ -18,6 +18,11 @@
         </div>
         {% endif %}
 
+        <div class="alert alert-info" style="text-align: left;">
+            <strong>{{ _('Your credentials are safe') }}</strong><br>
+            {{ _('WodSniper never sees or stores your password in plain text. Your password is encrypted before being saved and is only used to authenticate with WodBuster on your behalf.') }}
+        </div>
+
         <form method="POST" class="form">
             {{ form.hidden_tag() }}
 

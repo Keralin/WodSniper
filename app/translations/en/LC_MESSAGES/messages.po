@@ -276,6 +276,12 @@ msgstr "WodBuster Password"
 msgid "Your password is encrypted and stored securely for automatic re-login."
 msgstr "Your password is encrypted and stored securely for automatic re-login."
 
+msgid "Your credentials are safe"
+msgstr "Your credentials are safe"
+
+msgid "WodSniper never sees or stores your password in plain text. Your password is encrypted before being saved and is only used to authenticate with WodBuster on your behalf."
+msgstr "WodSniper never sees or stores your password in plain text. Your password is encrypted before being saved and is only used to authenticate with WodBuster on your behalf."
+
 msgid "Back to Dashboard"
 msgstr "Back to Dashboard"
 
