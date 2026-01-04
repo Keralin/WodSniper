@@ -17,7 +17,7 @@ logging.basicConfig(
 logging.getLogger('urllib3').setLevel(logging.WARNING)
 logging.getLogger('cloudscraper').setLevel(logging.WARNING)
 logging.getLogger('werkzeug').setLevel(logging.INFO)
-logging.getLogger('apscheduler').setLevel(logging.DEBUG)
+logging.getLogger('apscheduler').setLevel(logging.WARNING)
 
 app = create_app()
 
