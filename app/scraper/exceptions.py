@@ -21,6 +21,11 @@ class ClassNotFoundError(WodBusterError):
     pass
 
 
+class NoClassesAvailableError(WodBusterError):
+    """No classes available for the requested day (holiday, closed, etc.)."""
+    pass
+
+
 class ClassFullError(WodBusterError):
     """Class is full, no spots available."""
     pass

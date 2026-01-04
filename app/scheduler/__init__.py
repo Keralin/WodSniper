@@ -371,7 +371,7 @@ def _process_single_booking(booking, app):
     from app.models import db, BookingLog
     from app.scraper import (
         WodBusterClient, SessionExpiredError, ClassNotFoundError,
-        ClassFullError, BookingError, RateLimitError, LoginError
+        NoClassesAvailableError, ClassFullError, BookingError, RateLimitError, LoginError
     )
 
     user = booking.user
@@ -446,6 +446,15 @@ def _process_single_booking(booking, app):
             booking.last_error = str(e)
             message = 'Class is full - added to waitlist'
             logger.warning(f'Class full for booking {booking.id}, not retrying')
+            break  # Exit retry loop
+
+        except NoClassesAvailableError as e:
+            # Don't retry if no classes for this day (holiday/closed) - no point
+            booking.status = 'failed'
+            booking.fail_count += 1
+            booking.last_error = str(e)
+            message = f'No classes available (holiday or closed)'
+            logger.warning(f'No classes for booking {booking.id} on {target_date}, not retrying')
             break  # Exit retry loop
 
         except (SessionExpiredError, ClassNotFoundError, BookingError, RateLimitError) as e:

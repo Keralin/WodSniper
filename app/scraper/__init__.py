@@ -4,6 +4,7 @@ from app.scraper.exceptions import (
     LoginError,
     SessionExpiredError,
     ClassNotFoundError,
+    NoClassesAvailableError,
     ClassFullError,
     BookingError,
     RateLimitError
@@ -15,6 +16,7 @@ __all__ = [
     'LoginError',
     'SessionExpiredError',
     'ClassNotFoundError',
+    'NoClassesAvailableError',
     'ClassFullError',
     'BookingError',
     'RateLimitError'

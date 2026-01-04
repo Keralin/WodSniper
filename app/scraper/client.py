@@ -16,6 +16,7 @@ from app.scraper.exceptions import (
     LoginError,
     SessionExpiredError,
     ClassNotFoundError,
+    NoClassesAvailableError,
     ClassFullError,
     BookingError,
     RateLimitError
@@ -902,8 +903,16 @@ class WodBusterClient:
         time_str: str,
         class_type: str
     ) -> Optional[Dict[str, Any]]:
-        """Find a specific class by date, time, and type."""
+        """Find a specific class by date, time, and type.
+
+        Raises:
+            NoClassesAvailableError: If no classes exist for the given date (holiday/closed)
+        """
         classes = self.get_classes(date)
+
+        # If no classes at all for this day, it's likely a holiday or closed day
+        if not classes:
+            raise NoClassesAvailableError(f'No classes available for {date.strftime("%Y-%m-%d")} (holiday or closed)')
 
         target_time = time_str.replace(':', '')[:4]
         logger.info(f'Searching for class: type="{class_type}", time={target_time}')
