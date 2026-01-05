@@ -691,3 +691,13 @@ msgstr "Verificar Email"
 
 msgid "This link will expire in 24 hours. If you did not create an account, you can safely ignore this email."
 msgstr "Este enlace expirará en 24 horas. Si no creaste una cuenta, puedes ignorar este email."
+
+# SEO
+msgid "Automatic class booking for CrossFit, Hyrox and functional fitness. Book your WodBuster classes automatically when spots open."
+msgstr "Reserva automática de clases para CrossFit, Hyrox y fitness funcional. Reserva tus clases de WodBuster automáticamente cuando se abran las plazas."
+
+msgid "Automatic class booking for CrossFit, Hyrox and functional fitness. Never miss a class again."
+msgstr "Reserva automática de clases para CrossFit, Hyrox y fitness funcional. No vuelvas a quedarte sin plaza."
+
+msgid "Automatic class booking for CrossFit, Hyrox and functional fitness."
+msgstr "Reserva automática de clases para CrossFit, Hyrox y fitness funcional."

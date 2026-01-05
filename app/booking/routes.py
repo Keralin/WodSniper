@@ -33,6 +33,41 @@ def index():
     return render_template('index.html')
 
 
+@booking_bp.route('/robots.txt')
+def robots():
+    """Serve robots.txt for SEO."""
+    return current_app.send_static_file('robots.txt')
+
+
+@booking_bp.route('/sitemap.xml')
+def sitemap():
+    """Generate sitemap.xml for SEO."""
+    from flask import Response
+
+    base_url = request.url_root.rstrip('/')
+
+    xml = f'''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>{base_url}/</loc>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+    </url>
+    <url>
+        <loc>{base_url}/auth/login</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>{base_url}/auth/register</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+</urlset>'''
+
+    return Response(xml, mimetype='application/xml')
+
+
 @booking_bp.route('/health')
 def health_check():
     """Health check endpoint for monitoring and Railway."""

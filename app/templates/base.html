@@ -4,6 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}WodSniper{% endblock %}</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="{% block meta_description %}{{ _('Automatic class booking for CrossFit, Hyrox and functional fitness. Book your WodBuster classes automatically when spots open.') }}{% endblock %}">
+    <meta name="keywords" content="CrossFit, WodBuster, reserva automática, booking, Hyrox, functional fitness, box, clases, automatic booking">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="WodSniper">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{% block og_title %}WodSniper - {{ _('Automatic Class Booking') }}{% endblock %}">
+    <meta property="og:description" content="{{ _('Automatic class booking for CrossFit, Hyrox and functional fitness. Never miss a class again.') }}">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:site_name" content="WodSniper">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="WodSniper - {{ _('Automatic Class Booking') }}">
+    <meta name="twitter:description" content="{{ _('Automatic class booking for CrossFit, Hyrox and functional fitness.') }}">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{{ request.url }}">
+
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

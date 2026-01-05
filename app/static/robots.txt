@@ -1,0 +1,8 @@
+# WodSniper robots.txt
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /auth/
+Disallow: /admin/
+
+Sitemap: https://wodsniper.com/sitemap.xml
