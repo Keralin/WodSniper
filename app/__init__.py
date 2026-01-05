@@ -79,7 +79,7 @@ def create_app(config_name=None):
 
 
 def _run_migrations():
-    """Run manual database migrations for SQLite."""
+    """Run manual database migrations for SQLite/PostgreSQL."""
     from sqlalchemy import inspect, text
     from app.models import User
 
@@ -88,9 +88,10 @@ def _run_migrations():
 
     # Migration: Add email_verified column if it doesn't exist
     if 'email_verified' not in columns:
-        db.session.execute(text('ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT 0'))
+        # Use TRUE/FALSE for PostgreSQL compatibility (also works with SQLite)
+        db.session.execute(text('ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT FALSE'))
         # Mark all existing users as verified (so they don't get locked out)
-        db.session.execute(text('UPDATE users SET email_verified = 1'))
+        db.session.execute(text('UPDATE users SET email_verified = TRUE'))
         db.session.commit()
 
 
