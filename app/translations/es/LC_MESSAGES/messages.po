@@ -617,7 +617,7 @@ msgid "Re-detect schedule"
 msgstr "Actualizar horario"
 
 msgid "Use if your box changed their opening schedule"
-msgstr "Usa si tu box ha cambiado su horario de apertura"
+msgstr "Úsalo si tu box ha cambiado el horario de apertura"
 
 msgid "Schedule detected!"
 msgstr "¡Horario detectado!"
