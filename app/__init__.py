@@ -67,14 +67,31 @@ def create_app(config_name=None):
     def inject_locale():
         return {'get_locale': get_locale}
 
-    # Create database tables
+    # Create database tables and run migrations
     with app.app_context():
         db.create_all()
+        _run_migrations()
 
     # Initialize scheduler (only once, gunicorn uses --preload)
     _init_scheduler_once(app)
 
     return app
+
+
+def _run_migrations():
+    """Run manual database migrations for SQLite."""
+    from sqlalchemy import inspect, text
+    from app.models import User
+
+    inspector = inspect(db.engine)
+    columns = [col['name'] for col in inspector.get_columns('users')]
+
+    # Migration: Add email_verified column if it doesn't exist
+    if 'email_verified' not in columns:
+        db.session.execute(text('ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT 0'))
+        # Mark all existing users as verified (so they don't get locked out)
+        db.session.execute(text('UPDATE users SET email_verified = 1'))
+        db.session.commit()
 
 
 # Global flag to prevent scheduler from being initialized multiple times

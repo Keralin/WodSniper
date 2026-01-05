@@ -50,6 +50,9 @@ class User(UserMixin, db.Model):
     # Notification preferences
     email_notifications = db.Column(db.Boolean, default=True)
 
+    # Email verification
+    email_verified = db.Column(db.Boolean, default=False)
+
     # Admin
     is_admin = db.Column(db.Boolean, default=False)
 
@@ -114,6 +117,21 @@ class User(UserMixin, db.Model):
         s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
         try:
             email = s.loads(token, salt='password-reset', max_age=max_age)
+        except Exception:
+            return None
+        return User.query.filter_by(email=email).first()
+
+    def get_verification_token(self):
+        """Generate an email verification token valid for 24 hours."""
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        return s.dumps(self.email, salt='email-verification')
+
+    @staticmethod
+    def verify_email_token(token, max_age=86400):
+        """Verify an email verification token. Returns user if valid, None otherwise."""
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        try:
+            email = s.loads(token, salt='email-verification', max_age=max_age)
         except Exception:
             return None
         return User.query.filter_by(email=email).first()

@@ -651,3 +651,40 @@ msgstr "Reserva activada"
 
 msgid "Booking deactivated"
 msgstr "Reserva desactivada"
+
+# Email verification
+msgid "Please verify your email before logging in. Check your inbox for the verification link."
+msgstr "Por favor, verifica tu email antes de iniciar sesión. Revisa tu bandeja de entrada para el enlace de verificación."
+
+msgid "Account created! Please check your email to verify your account before logging in."
+msgstr "¡Cuenta creada! Por favor, revisa tu email para verificar tu cuenta antes de iniciar sesión."
+
+msgid "Invalid or expired verification link. Please request a new one."
+msgstr "Enlace de verificación inválido o expirado. Por favor, solicita uno nuevo."
+
+msgid "Email already verified. You can log in."
+msgstr "Email ya verificado. Puedes iniciar sesión."
+
+msgid "Email verified successfully! You can now log in."
+msgstr "¡Email verificado correctamente! Ya puedes iniciar sesión."
+
+msgid "Please provide your email address."
+msgstr "Por favor, proporciona tu dirección de email."
+
+msgid "If an account with that email exists and is not verified, a new verification link has been sent."
+msgstr "Si existe una cuenta con ese email y no está verificada, se ha enviado un nuevo enlace de verificación."
+
+msgid "WodSniper: Verify Your Email"
+msgstr "WodSniper: Verifica tu Email"
+
+msgid "Verify Your Email"
+msgstr "Verifica tu Email"
+
+msgid "Thanks for signing up! Please click the button below to verify your email address:"
+msgstr "¡Gracias por registrarte! Por favor, haz clic en el botón de abajo para verificar tu dirección de email:"
+
+msgid "Verify Email"
+msgstr "Verificar Email"
+
+msgid "This link will expire in 24 hours. If you did not create an account, you can safely ignore this email."
+msgstr "Este enlace expirará en 24 horas. Si no creaste una cuenta, puedes ignorar este email."

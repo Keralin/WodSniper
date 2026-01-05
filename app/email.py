@@ -267,6 +267,72 @@ def send_password_reset_email(user):
     return success
 
 
+def send_verification_email(user):
+    """Send an email verification link to the user."""
+    from flask import url_for
+    from flask_babel import gettext as _
+
+    logger.info(f'Verification email requested for {user.email}')
+
+    api_key, _ = _get_email_config()
+
+    if not api_key:
+        logger.warning('RESEND_API_KEY not configured')
+        return False
+
+    token = user.get_verification_token()
+    verify_url = url_for('auth.verify_email', token=token, _external=True)
+
+    subject = _('WodSniper: Verify Your Email')
+    html_body = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background: #1d3557; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }}
+            .header h1 {{ margin: 0; font-size: 24px; }}
+            .content {{ background: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; }}
+            .btn {{ display: inline-block; background: #2a9d8f; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; margin: 16px 0; }}
+            .btn:hover {{ background: #238b7e; }}
+            .footer {{ text-align: center; margin-top: 20px; font-size: 12px; color: #666; }}
+            .note {{ background: #fff3cd; border: 1px solid #ffc107; padding: 12px; border-radius: 6px; font-size: 14px; margin-top: 16px; }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>WodSniper</h1>
+        </div>
+        <div class="content">
+            <h2>{_('Verify Your Email')}</h2>
+            <p>{_('Thanks for signing up! Please click the button below to verify your email address:')}</p>
+
+            <p style="text-align: center;">
+                <a href="{verify_url}" class="btn">{_('Verify Email')}</a>
+            </p>
+
+            <div class="note">
+                <strong>{_('Note:')}</strong> {_('This link will expire in 24 hours. If you did not create an account, you can safely ignore this email.')}
+            </div>
+        </div>
+        <div class="footer">
+            <p>{_('Sent by WodSniper')}</p>
+        </div>
+    </body>
+    </html>
+    """
+
+    success = _send_with_resend(user.email, subject, html_body)
+
+    if success:
+        logger.info(f'Verification email sent successfully to {user.email}')
+    else:
+        logger.error(f'Failed to send verification email to {user.email}')
+
+    return success
+
+
 def send_test_email(user):
     """Send a test email to verify Resend configuration."""
     from flask_babel import gettext as _

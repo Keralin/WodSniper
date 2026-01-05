@@ -7,7 +7,7 @@ from app.auth import auth_bp
 from app.auth.forms import LoginForm, RegisterForm, WodBusterConnectForm, ForgotPasswordForm, ResetPasswordForm
 from app.models import db, User, Box
 from app.scraper import WodBusterClient, LoginError
-from app.email import send_password_reset_email
+from app.email import send_password_reset_email, send_verification_email
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -21,6 +21,11 @@ def login():
         user = User.query.filter_by(email=form.email.data.lower()).first()
 
         if user and user.check_password(form.password.data):
+            # Check if email is verified
+            if not user.email_verified:
+                flash(_('Please verify your email before logging in. Check your inbox for the verification link.'), 'warning')
+                return render_template('auth/login.html', form=form)
+
             login_user(user, remember=form.remember_me.data)
             user.last_login = datetime.utcnow()
             db.session.commit()
@@ -45,13 +50,16 @@ def register():
     if form.validate_on_submit():
         user = User(email=form.email.data.lower())
         user.set_password(form.password.data)
+        user.email_verified = False
 
         db.session.add(user)
         db.session.commit()
 
-        flash(_('Account created successfully. Now connect your WodBuster account.'), 'success')
-        login_user(user)
-        return redirect(url_for('auth.connect_wodbuster'))
+        # Send verification email
+        send_verification_email(user)
+
+        flash(_('Account created! Please check your email to verify your account before logging in.'), 'success')
+        return redirect(url_for('auth.login'))
 
     return render_template('auth/register.html', form=form)
 
@@ -102,6 +110,45 @@ def reset_password(token):
         return redirect(url_for('auth.login'))
 
     return render_template('auth/reset_password.html', form=form)
+
+
+@auth_bp.route('/verify-email/<token>')
+def verify_email(token):
+    """Verify email address with token."""
+    if current_user.is_authenticated:
+        return redirect(url_for('booking.dashboard'))
+
+    user = User.verify_email_token(token)
+    if not user:
+        flash(_('Invalid or expired verification link. Please request a new one.'), 'error')
+        return redirect(url_for('auth.login'))
+
+    if user.email_verified:
+        flash(_('Email already verified. You can log in.'), 'info')
+        return redirect(url_for('auth.login'))
+
+    user.email_verified = True
+    db.session.commit()
+
+    flash(_('Email verified successfully! You can now log in.'), 'success')
+    return redirect(url_for('auth.login'))
+
+
+@auth_bp.route('/resend-verification', methods=['POST'])
+def resend_verification():
+    """Resend verification email."""
+    email = request.form.get('email', '').lower()
+    if not email:
+        flash(_('Please provide your email address.'), 'error')
+        return redirect(url_for('auth.login'))
+
+    user = User.query.filter_by(email=email).first()
+    if user and not user.email_verified:
+        send_verification_email(user)
+
+    # Always show success to prevent email enumeration
+    flash(_('If an account with that email exists and is not verified, a new verification link has been sent.'), 'info')
+    return redirect(url_for('auth.login'))
 
 
 @auth_bp.route('/connect', methods=['GET', 'POST'])

@@ -645,3 +645,40 @@ msgstr "Connection error"
 
 msgid "Session expired. Please reconnect your WodBuster account."
 msgstr "Session expired. Please reconnect your WodBuster account."
+
+# Email verification
+msgid "Please verify your email before logging in. Check your inbox for the verification link."
+msgstr "Please verify your email before logging in. Check your inbox for the verification link."
+
+msgid "Account created! Please check your email to verify your account before logging in."
+msgstr "Account created! Please check your email to verify your account before logging in."
+
+msgid "Invalid or expired verification link. Please request a new one."
+msgstr "Invalid or expired verification link. Please request a new one."
+
+msgid "Email already verified. You can log in."
+msgstr "Email already verified. You can log in."
+
+msgid "Email verified successfully! You can now log in."
+msgstr "Email verified successfully! You can now log in."
+
+msgid "Please provide your email address."
+msgstr "Please provide your email address."
+
+msgid "If an account with that email exists and is not verified, a new verification link has been sent."
+msgstr "If an account with that email exists and is not verified, a new verification link has been sent."
+
+msgid "WodSniper: Verify Your Email"
+msgstr "WodSniper: Verify Your Email"
+
+msgid "Verify Your Email"
+msgstr "Verify Your Email"
+
+msgid "Thanks for signing up! Please click the button below to verify your email address:"
+msgstr "Thanks for signing up! Please click the button below to verify your email address:"
+
+msgid "Verify Email"
+msgstr "Verify Email"
+
+msgid "This link will expire in 24 hours. If you did not create an account, you can safely ignore this email."
+msgstr "This link will expire in 24 hours. If you did not create an account, you can safely ignore this email."
