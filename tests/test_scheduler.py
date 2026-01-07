@@ -213,13 +213,13 @@ class TestSchedulerConfig:
         from app.scheduler import MAX_RETRY_ATTEMPTS, RETRY_DELAY
 
         assert MAX_RETRY_ATTEMPTS == 3
-        assert RETRY_DELAY == 2
+        assert RETRY_DELAY == 1
 
-    def test_booking_interval_exists(self):
-        """Should have booking interval constant."""
-        from app.scheduler import BOOKING_INTERVAL
+    def test_max_parallel_users_exists(self):
+        """Should have max parallel users constant."""
+        from app.scheduler import MAX_PARALLEL_USERS
 
-        assert BOOKING_INTERVAL == 0.5
+        assert MAX_PARALLEL_USERS == 50
 
 
 class TestSessionRefresh:
