@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import time
 
@@ -11,11 +12,9 @@ from apscheduler.triggers.cron import CronTrigger
 logger = logging.getLogger(__name__)
 
 scheduler = BackgroundScheduler()
-_booking_lock = threading.Lock()
-_last_booking_time = None
-BOOKING_INTERVAL = 0.5  # Minimum seconds between bookings
 MAX_RETRY_ATTEMPTS = 3  # Maximum retry attempts per booking
 RETRY_DELAY = 1  # Seconds between retry attempts
+MAX_PARALLEL_USERS = 50  # Maximum concurrent user booking threads
 
 
 def init_scheduler(app):
@@ -188,6 +187,20 @@ def run_scheduled_bookings_for_box(app, box):
 
         logger.info(f'Found {len(bookings)} active bookings for box {box.name}')
 
+        # Group bookings by user for parallel processing
+        bookings_by_user = defaultdict(list)
+        for booking in bookings:
+            bookings_by_user[booking.user_id].append({
+                'id': booking.id,
+                'day_of_week': booking.day_of_week,
+                'day_name': booking.day_name,
+                'time': booking.time,
+                'class_type': booking.class_type,
+            })
+
+        user_ids = list(bookings_by_user.keys())
+        logger.info(f'Processing {len(user_ids)} users in parallel')
+
         # Wait until exact opening time
         now = datetime.now()
         target_time = now.replace(
@@ -208,29 +221,35 @@ def run_scheduled_bookings_for_box(app, box):
 
         logger.info(f'=== BOOKING START at {datetime.now().strftime("%H:%M:%S.%f")} ===')
 
-        results_by_user = defaultdict(list)
+        # Process users in parallel
+        results_by_user = {}
+        num_workers = min(len(user_ids), MAX_PARALLEL_USERS)
 
-        for booking in bookings:
-            try:
-                result = _process_single_booking(booking, app)
-                if result:
-                    results_by_user[booking.user_id].append(result)
-            except Exception as e:
-                logger.error(f'Error processing booking {booking.id}: {e}')
-                results_by_user[booking.user_id].append({
-                    'status': 'failed',
-                    'day_name': booking.day_name,
-                    'time': booking.time,
-                    'class_type': booking.class_type,
-                    'message': str(e),
-                    'target_date': None
-                })
+        with ThreadPoolExecutor(max_workers=num_workers) as executor:
+            futures = {
+                executor.submit(
+                    _process_user_bookings,
+                    app,
+                    user_id,
+                    bookings_by_user[user_id]
+                ): user_id
+                for user_id in user_ids
+            }
 
-            _wait_for_rate_limit()
+            for future in as_completed(futures):
+                user_id = futures[future]
+                try:
+                    user_results = future.result()
+                    if user_results:
+                        results_by_user[user_id] = user_results
+                except Exception as e:
+                    logger.error(f'Error processing user {user_id}: {e}')
+
+        total_time = (datetime.now() - target_time).total_seconds()
+        logger.info(f'=== BOOKING COMPLETE FOR BOX: {box.name} in {total_time:.2f}s ===')
 
         _send_booking_notifications(app, results_by_user)
 
-        logger.info(f'=== BOOKING COMPLETE FOR BOX: {box.name} ===')
         logger.info('=' * 60)
 
 
@@ -286,7 +305,7 @@ def refresh_all_sessions(app):
 
 
 def run_scheduled_bookings(app):
-    """Execute all scheduled bookings when booking window opens."""
+    """Execute all scheduled bookings when booking window opens (parallel processing)."""
     from app.models import db, User, Booking, BookingLog
     from app.scraper import WodBusterClient
     from collections import defaultdict
@@ -296,11 +315,7 @@ def run_scheduled_bookings(app):
     logger.info(f'Current time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")}')
 
     with app.app_context():
-        # Get all active bookings for today's day of week
-        today = datetime.now()
-        target_day = today.weekday()
-
-        # For Sunday booking window, we book for the coming week
+        # Get all active bookings
         bookings = Booking.query.filter_by(
             is_active=True
         ).join(User).filter(
@@ -314,6 +329,20 @@ def run_scheduled_bookings(app):
 
         logger.info(f'Found {len(bookings)} active bookings')
 
+        # Group bookings by user for parallel processing
+        bookings_by_user = defaultdict(list)
+        for booking in bookings:
+            bookings_by_user[booking.user_id].append({
+                'id': booking.id,
+                'day_of_week': booking.day_of_week,
+                'day_name': booking.day_name,
+                'time': booking.time,
+                'class_type': booking.class_type,
+            })
+
+        user_ids = list(bookings_by_user.keys())
+        logger.info(f'Processing {len(user_ids)} users in parallel')
+
         # Wait until exactly 13:00 UTC (14:00 Spanish time)
         now = datetime.now()
         target_time = now.replace(hour=13, minute=0, second=0, microsecond=0)
@@ -321,7 +350,7 @@ def run_scheduled_bookings(app):
         if now < target_time:
             wait_seconds = (target_time - now).total_seconds()
             logger.info(f'Waiting {wait_seconds:.1f} seconds until 13:00 UTC (14:00 Spanish)...')
-            time.sleep(max(0, wait_seconds - 1))  # Wake up 1 second early
+            time.sleep(max(0, wait_seconds - 1))
 
             # Precise wait for the last second
             logger.debug('Entering precision wait loop...')
@@ -330,40 +359,257 @@ def run_scheduled_bookings(app):
 
         logger.info(f'=== BOOKING START at {datetime.now().strftime("%H:%M:%S.%f")} ===')
 
-        # Collect results by user for email notifications
-        results_by_user = defaultdict(list)
+        # Process users in parallel
+        results_by_user = {}
+        num_workers = min(len(user_ids), MAX_PARALLEL_USERS)
 
-        # Process bookings with rate limiting
-        for booking in bookings:
-            try:
-                result = _process_single_booking(booking, app)
-                if result:
-                    results_by_user[booking.user_id].append(result)
-            except Exception as e:
-                logger.error(f'Error processing booking {booking.id}: {e}')
-                # Add error result
-                results_by_user[booking.user_id].append({
-                    'status': 'failed',
-                    'day_name': booking.day_name,
-                    'time': booking.time,
-                    'class_type': booking.class_type,
-                    'message': str(e),
-                    'target_date': None
-                })
+        with ThreadPoolExecutor(max_workers=num_workers) as executor:
+            futures = {
+                executor.submit(
+                    _process_user_bookings,
+                    app,
+                    user_id,
+                    bookings_by_user[user_id]
+                ): user_id
+                for user_id in user_ids
+            }
 
-            # Rate limiting between bookings
-            _wait_for_rate_limit()
+            for future in as_completed(futures):
+                user_id = futures[future]
+                try:
+                    user_results = future.result()
+                    if user_results:
+                        results_by_user[user_id] = user_results
+                except Exception as e:
+                    logger.error(f'Error processing user {user_id}: {e}')
+
+        total_time = (datetime.now() - target_time).total_seconds()
+        logger.info(f'=== BOOKING RUN COMPLETE in {total_time:.2f}s ===')
 
         # Send email notifications to each user
         _send_booking_notifications(app, results_by_user)
 
-        logger.info(f'=== BOOKING RUN COMPLETE at {datetime.now().strftime("%H:%M:%S")} ===')
         logger.info('=' * 60)
+
+
+def _process_user_bookings(app, user_id, booking_data_list):
+    """
+    Process all bookings for a single user in a dedicated thread.
+
+    Each user gets their own thread with a fresh DB session for thread-safety.
+    This allows parallel processing of different users' bookings.
+
+    Args:
+        app: Flask application instance
+        user_id: User ID to process bookings for
+        booking_data_list: List of booking data dicts with id, day_of_week, time, class_type
+
+    Returns:
+        list: Results for each booking
+    """
+    from app.models import db, User, Booking, BookingLog
+    from app.scraper import (
+        WodBusterClient, SessionExpiredError, ClassNotFoundError,
+        NoClassesAvailableError, ClassFullError, BookingError, RateLimitError, LoginError
+    )
+
+    results = []
+
+    with app.app_context():
+        user = User.query.get(user_id)
+        if not user:
+            logger.error(f'User {user_id} not found')
+            return results
+
+        logger.info(f'[Thread-{user_id}] Processing {len(booking_data_list)} bookings for {user.email}')
+
+        # Initialize client once per user
+        client = WodBusterClient(user.effective_box_url)
+        session_valid = False
+
+        # Try to restore session
+        cookies = user.get_wodbuster_cookies()
+        if cookies:
+            session_valid = client.restore_session(cookies)
+
+        # If session expired, try re-login
+        if not session_valid:
+            logger.info(f'[Thread-{user_id}] Session expired, re-logging...')
+            wodbuster_password = user.get_wodbuster_password()
+
+            if wodbuster_password and user.wodbuster_email:
+                try:
+                    client.login(user.wodbuster_email, wodbuster_password)
+                    user.set_wodbuster_cookies(client.get_cookies())
+                    db.session.commit()
+                    session_valid = True
+                    logger.info(f'[Thread-{user_id}] Re-login successful')
+                except LoginError as e:
+                    logger.error(f'[Thread-{user_id}] Re-login failed: {e}')
+                    # Return failure for all bookings
+                    for bd in booking_data_list:
+                        results.append({
+                            'user_id': user_id,
+                            'status': 'failed',
+                            'day_name': bd['day_name'],
+                            'time': bd['time'],
+                            'class_type': bd['class_type'],
+                            'message': f'Session expired and re-login failed: {e}',
+                            'target_date': None
+                        })
+                    return results
+            else:
+                logger.error(f'[Thread-{user_id}] No credentials for re-login')
+                for bd in booking_data_list:
+                    results.append({
+                        'user_id': user_id,
+                        'status': 'failed',
+                        'day_name': bd['day_name'],
+                        'time': bd['time'],
+                        'class_type': bd['class_type'],
+                        'message': 'Session expired and no credentials stored',
+                        'target_date': None
+                    })
+                return results
+
+        # Process each booking for this user
+        for booking_data in booking_data_list:
+            booking = Booking.query.get(booking_data['id'])
+            if not booking:
+                continue
+
+            result = _process_single_booking_with_client(booking, client, app, user)
+            if result:
+                results.append(result)
+
+        logger.info(f'[Thread-{user_id}] Completed all bookings for {user.email}')
+
+    return results
+
+
+def _process_single_booking_with_client(booking, client, app, user):
+    """
+    Process a single booking using an existing client session.
+
+    Args:
+        booking: Booking model instance
+        client: Pre-authenticated WodBusterClient
+        app: Flask application instance
+        user: User model instance
+
+    Returns:
+        dict: Result with status, booking info, and message
+    """
+    from app.models import db, BookingLog
+    from app.scraper import (
+        ClassNotFoundError, NoClassesAvailableError, ClassFullError,
+        BookingError, RateLimitError
+    )
+
+    logger.info(f'[Thread-{user.id}] Booking {booking.id}: {booking.day_name} {booking.time} {booking.class_type}')
+    target_date = None
+    message = ''
+    last_error = None
+
+    # Calculate target date
+    today = datetime.now()
+    days_ahead = booking.day_of_week - today.weekday()
+    if days_ahead <= 0:
+        days_ahead += 7
+    target_date = today + timedelta(days=days_ahead)
+
+    # Retry loop
+    for attempt in range(1, MAX_RETRY_ATTEMPTS + 1):
+        try:
+            logger.debug(f'[Thread-{user.id}] Attempt {attempt}/{MAX_RETRY_ATTEMPTS} for booking {booking.id}')
+
+            # Find and book the class
+            cls = client.find_class(target_date, booking.time, booking.class_type)
+
+            if not cls:
+                raise ClassNotFoundError(f'Class not found: {booking.class_type} at {booking.time}')
+
+            if client.book_class(cls['id']):
+                booking.status = 'success'
+                booking.success_count += 1
+                booking.last_error = None
+                message = f'Booked: {cls["name"]} on {target_date.strftime("%d/%m")}'
+                if attempt > 1:
+                    message += f' (attempt {attempt})'
+                logger.info(f'[Thread-{user.id}] {message}')
+                break
+            else:
+                raise BookingError('Booking returned false')
+
+        except ClassFullError as e:
+            booking.status = 'waiting'
+            booking.last_error = str(e)
+            message = 'Class is full - added to waitlist'
+            logger.warning(f'[Thread-{user.id}] Class full for booking {booking.id}')
+            break
+
+        except NoClassesAvailableError as e:
+            booking.status = 'failed'
+            booking.fail_count += 1
+            booking.last_error = str(e)
+            message = 'No classes available (holiday or closed)'
+            logger.warning(f'[Thread-{user.id}] No classes for booking {booking.id}')
+            break
+
+        except (ClassNotFoundError, BookingError, RateLimitError) as e:
+            last_error = str(e)
+            logger.warning(f'[Thread-{user.id}] Attempt {attempt} failed: {e}')
+
+            if attempt < MAX_RETRY_ATTEMPTS:
+                time.sleep(RETRY_DELAY)
+            else:
+                booking.status = 'failed'
+                booking.fail_count += 1
+                booking.last_error = last_error
+                message = f'{last_error} (after {MAX_RETRY_ATTEMPTS} attempts)'
+
+        except Exception as e:
+            last_error = str(e)
+            logger.exception(f'[Thread-{user.id}] Unexpected error: {e}')
+
+            if attempt < MAX_RETRY_ATTEMPTS:
+                time.sleep(RETRY_DELAY)
+            else:
+                booking.status = 'failed'
+                booking.fail_count += 1
+                booking.last_error = last_error
+                message = f'{last_error} (after {MAX_RETRY_ATTEMPTS} attempts)'
+
+    # Update booking
+    booking.last_attempt = datetime.utcnow()
+
+    # Create log entry
+    log = BookingLog(
+        booking_id=booking.id,
+        status=booking.status,
+        message=message[:500] if message else None,
+        target_date=target_date.date() if target_date else None
+    )
+
+    with app.app_context():
+        db.session.add(log)
+        db.session.commit()
+
+    return {
+        'user_id': user.id,
+        'status': booking.status,
+        'day_name': booking.day_name,
+        'time': booking.time,
+        'class_type': booking.class_type,
+        'message': message,
+        'target_date': target_date.strftime('%d/%m/%Y') if target_date else None
+    }
 
 
 def _process_single_booking(booking, app):
     """
     Process a single booking with retry logic.
+    Legacy function for backwards compatibility.
 
     Returns:
         dict: Result with status, booking info, and message for email notification
@@ -512,19 +758,6 @@ def _process_single_booking(booking, app):
     }
 
 
-def _wait_for_rate_limit():
-    """Enforce rate limiting between bookings."""
-    global _last_booking_time
-
-    with _booking_lock:
-        now = time.time()
-        if _last_booking_time:
-            elapsed = now - _last_booking_time
-            if elapsed < BOOKING_INTERVAL:
-                time.sleep(BOOKING_INTERVAL - elapsed)
-        _last_booking_time = time.time()
-
-
 def check_pending_bookings(app):
     """Check for pending bookings (debug/development mode)."""
     logger.info('=== DEBUG: Running scheduled bookings check ===')
@@ -532,12 +765,13 @@ def check_pending_bookings(app):
 
 
 def run_bookings_now(app, send_emails=True):
-    """Execute all scheduled bookings immediately (for testing)."""
+    """Execute all scheduled bookings immediately (for testing, parallel processing)."""
     from app.models import db, User, Booking, BookingLog
     from app.scraper import WodBusterClient
     from collections import defaultdict
 
-    logger.info('=== Starting IMMEDIATE booking run ===')
+    logger.info('=== Starting IMMEDIATE booking run (parallel) ===')
+    start_time = datetime.now()
 
     with app.app_context():
         # Get all active bookings
@@ -554,29 +788,46 @@ def run_bookings_now(app, send_emails=True):
 
         logger.info(f'Found {len(bookings)} active bookings to process')
 
-        # Collect results by user for email notifications
-        results_by_user = defaultdict(list)
-
-        # Process bookings immediately (no waiting for 13:00)
+        # Group bookings by user for parallel processing
+        bookings_by_user = defaultdict(list)
         for booking in bookings:
-            try:
-                logger.info(f'Processing: {booking.day_name} {booking.time} {booking.class_type}')
-                result = _process_single_booking(booking, app)
-                if result:
-                    results_by_user[booking.user_id].append(result)
-            except Exception as e:
-                logger.error(f'Error processing booking {booking.id}: {e}')
-                results_by_user[booking.user_id].append({
-                    'status': 'failed',
-                    'day_name': booking.day_name,
-                    'time': booking.time,
-                    'class_type': booking.class_type,
-                    'message': str(e),
-                    'target_date': None
-                })
+            bookings_by_user[booking.user_id].append({
+                'id': booking.id,
+                'day_of_week': booking.day_of_week,
+                'day_name': booking.day_name,
+                'time': booking.time,
+                'class_type': booking.class_type,
+            })
 
-            # Rate limiting between bookings
-            _wait_for_rate_limit()
+        user_ids = list(bookings_by_user.keys())
+        logger.info(f'Processing {len(user_ids)} users in parallel')
+
+        # Process users in parallel
+        results_by_user = {}
+        num_workers = min(len(user_ids), MAX_PARALLEL_USERS)
+
+        with ThreadPoolExecutor(max_workers=num_workers) as executor:
+            futures = {
+                executor.submit(
+                    _process_user_bookings,
+                    app,
+                    user_id,
+                    bookings_by_user[user_id]
+                ): user_id
+                for user_id in user_ids
+            }
+
+            for future in as_completed(futures):
+                user_id = futures[future]
+                try:
+                    user_results = future.result()
+                    if user_results:
+                        results_by_user[user_id] = user_results
+                except Exception as e:
+                    logger.error(f'Error processing user {user_id}: {e}')
+
+        total_time = (datetime.now() - start_time).total_seconds()
+        logger.info(f'=== IMMEDIATE booking run complete in {total_time:.2f}s ===')
 
         # Send email notifications
         if send_emails:
