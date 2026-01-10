@@ -208,7 +208,7 @@ def send_password_reset_email(user):
 
     logger.info(f'Password reset email requested for {user.email}')
 
-    api_key, _ = _get_email_config()
+    api_key, from_mail = _get_email_config()
 
     if not api_key:
         logger.warning('RESEND_API_KEY not configured')
