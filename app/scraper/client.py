@@ -311,6 +311,11 @@ class WodBusterClient:
         if self.flaresolverr:
             try:
                 return self._login_with_flaresolverr(email, password)
+            except LoginError as e:
+                # Don't fallback for authentication errors - re-raise them
+                if 'invalid' in str(e).lower() or 'password' in str(e).lower():
+                    raise
+                logger.warning(f'FlareSolverr login failed, falling back to cloudscraper: {e}')
             except Exception as e:
                 logger.warning(f'FlareSolverr login failed, falling back to cloudscraper: {e}')
 
@@ -1079,6 +1084,11 @@ class WodBusterClient:
         if flaresolverr_url:
             try:
                 return cls._detect_box_url_with_flaresolverr(email, password, flaresolverr_url)
+            except LoginError as e:
+                # Don't fallback for authentication errors - re-raise them
+                if 'invalid' in str(e).lower() or 'password' in str(e).lower():
+                    raise
+                logger.warning(f'FlareSolverr detect_box_url failed, falling back to cloudscraper: {e}')
             except Exception as e:
                 logger.warning(f'FlareSolverr detect_box_url failed, falling back to cloudscraper: {e}')
 
