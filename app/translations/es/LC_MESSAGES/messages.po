@@ -711,3 +711,43 @@ msgstr "Introduce tu email"
 
 msgid "Resend"
 msgstr "Reenviar"
+
+# Booking summary email
+msgid "WodSniper: %(count)d classes booked successfully!"
+msgstr "WodSniper: ¡%(count)d clases reservadas correctamente!"
+
+msgid "WodSniper: %(success)d/%(total)d classes booked"
+msgstr "WodSniper: %(success)d/%(total)d clases reservadas"
+
+msgid "WodSniper: Booking issues - action needed"
+msgstr "WodSniper: Problemas con las reservas - acción requerida"
+
+msgid "WodSniper Booking Summary"
+msgstr "Resumen de Reservas WodSniper"
+
+msgid "Hi %(name)s,"
+msgstr "Hola %(name)s,"
+
+msgid "Here's your weekly booking summary:"
+msgstr "Aquí tienes tu resumen semanal de reservas:"
+
+msgid "Booked"
+msgstr "Reservadas"
+
+msgid "Failed"
+msgstr "Fallidas"
+
+msgid "Waiting"
+msgstr "En espera"
+
+msgid "Need help?"
+msgstr "¿Necesitas ayuda?"
+
+msgid "Check your WodSniper dashboard to review failed bookings and try again manually."
+msgstr "Revisa tu panel de WodSniper para ver las reservas fallidas e inténtalo de nuevo manualmente."
+
+msgid "Sent by WodSniper on"
+msgstr "Enviado por WodSniper el"
+
+msgid "You can disable email notifications in your account settings."
+msgstr "Puedes desactivar las notificaciones por email en los ajustes de tu cuenta."

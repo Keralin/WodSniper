@@ -58,6 +58,8 @@ def send_booking_summary(user, results: List[Dict[str, Any]]):
         user: User object with email
         results: List of booking results with status, booking info, and message
     """
+    from flask_babel import gettext as _, force_locale
+
     if not user.email_notifications:
         logger.info(f'Email notifications disabled for user {user.email}')
         return False
@@ -76,19 +78,21 @@ def send_booking_summary(user, results: List[Dict[str, Any]]):
     failed = [r for r in results if r['status'] == 'failed']
     waiting = [r for r in results if r['status'] == 'waiting']
 
-    # Build email subject
+    # Build email subject and body in user's language
     total = len(results)
     success_count = len(successful)
+    user_locale = getattr(user, 'language', 'es') or 'es'
 
-    if success_count == total:
-        subject = f'WodSniper: {success_count} classes booked successfully!'
-    elif success_count > 0:
-        subject = f'WodSniper: {success_count}/{total} classes booked'
-    else:
-        subject = f'WodSniper: Booking issues - action needed'
+    with force_locale(user_locale):
+        if success_count == total:
+            subject = _('WodSniper: %(count)d classes booked successfully!') % {'count': success_count}
+        elif success_count > 0:
+            subject = _('WodSniper: %(success)d/%(total)d classes booked') % {'success': success_count, 'total': total}
+        else:
+            subject = _('WodSniper: Booking issues - action needed')
 
-    # Render email body
-    html_body = render_booking_email(user, successful, failed, waiting)
+        # Render email body
+        html_body = render_booking_email(user, successful, failed, waiting)
 
     # Send via Resend
     success = _send_with_resend(user.email, subject, html_body)
@@ -103,6 +107,7 @@ def send_booking_summary(user, results: List[Dict[str, Any]]):
 
 def render_booking_email(user, successful, failed, waiting):
     """Render the booking summary email HTML."""
+    from flask_babel import gettext as _
 
     template = """
 <!DOCTYPE html>
@@ -131,16 +136,16 @@ def render_booking_email(user, successful, failed, waiting):
 </head>
 <body>
     <div class="header">
-        <h1>WodSniper Booking Summary</h1>
+        <h1>{{ header_title }}</h1>
     </div>
     <div class="content">
-        <p>Hi {{ user_name }},</p>
-        <p>Here's your weekly booking summary:</p>
+        <p>{{ greeting }}</p>
+        <p>{{ summary_intro }}</p>
 
         {% if successful %}
         <div class="section">
             <div class="section-title">
-                <span class="badge badge-success">{{ successful|length }} Booked</span>
+                <span class="badge badge-success">{{ successful|length }} {{ booked_label }}</span>
             </div>
             {% for r in successful %}
             <div class="booking-card success">
@@ -154,7 +159,7 @@ def render_booking_email(user, successful, failed, waiting):
         {% if failed %}
         <div class="section">
             <div class="section-title">
-                <span class="badge badge-failed">{{ failed|length }} Failed</span>
+                <span class="badge badge-failed">{{ failed|length }} {{ failed_label }}</span>
             </div>
             {% for r in failed %}
             <div class="booking-card failed">
@@ -168,7 +173,7 @@ def render_booking_email(user, successful, failed, waiting):
         {% if waiting %}
         <div class="section">
             <div class="section-title">
-                <span class="badge badge-waiting">{{ waiting|length }} Waiting</span>
+                <span class="badge badge-waiting">{{ waiting|length }} {{ waiting_label }}</span>
             </div>
             {% for r in waiting %}
             <div class="booking-card waiting">
@@ -180,31 +185,44 @@ def render_booking_email(user, successful, failed, waiting):
         {% endif %}
 
         {% if failed %}
-        <p><strong>Need help?</strong> Check your WodSniper dashboard to review failed bookings and try again manually.</p>
+        <p><strong>{{ need_help }}</strong> {{ help_text }}</p>
         {% endif %}
     </div>
     <div class="footer">
-        <p>Sent by WodSniper on {{ now }}</p>
-        <p>You can disable email notifications in your account settings.</p>
+        <p>{{ sent_by }} {{ now }}</p>
+        <p>{{ disable_notifications }}</p>
     </div>
 </body>
 </html>
     """
 
+    user_name = user.email.split('@')[0].title()
+
     return render_template_string(
         template,
-        user_name=user.email.split('@')[0].title(),
+        user_name=user_name,
         successful=successful,
         failed=failed,
         waiting=waiting,
-        now=datetime.now().strftime('%d/%m/%Y %H:%M')
+        now=datetime.now().strftime('%d/%m/%Y %H:%M'),
+        # Translated strings
+        header_title=_('WodSniper Booking Summary'),
+        greeting=_('Hi %(name)s,') % {'name': user_name},
+        summary_intro=_("Here's your weekly booking summary:"),
+        booked_label=_('Booked'),
+        failed_label=_('Failed'),
+        waiting_label=_('Waiting'),
+        need_help=_('Need help?'),
+        help_text=_('Check your WodSniper dashboard to review failed bookings and try again manually.'),
+        sent_by=_('Sent by WodSniper on'),
+        disable_notifications=_('You can disable email notifications in your account settings.')
     )
 
 
 def send_password_reset_email(user):
     """Send a password reset email to the user."""
     from flask import url_for
-    from flask_babel import gettext as _
+    from flask_babel import gettext as _, force_locale
 
     logger.info(f'Password reset email requested for {user.email}')
 
@@ -217,8 +235,12 @@ def send_password_reset_email(user):
     token = user.get_reset_token()
     reset_url = url_for('auth.reset_password', token=token, _external=True)
 
-    subject = _('WodSniper: Reset Your Password')
-    html_body = f"""
+    # Use user's preferred language
+    user_locale = getattr(user, 'language', 'es') or 'es'
+
+    with force_locale(user_locale):
+        subject = _('WodSniper: Reset Your Password')
+        html_body = f"""
     <!DOCTYPE html>
     <html>
     <head>
@@ -270,7 +292,7 @@ def send_password_reset_email(user):
 def send_verification_email(user):
     """Send an email verification link to the user."""
     from flask import url_for
-    from flask_babel import gettext as _
+    from flask_babel import gettext as _, force_locale
 
     logger.info(f'Verification email requested for {user.email}')
 
@@ -283,8 +305,12 @@ def send_verification_email(user):
     token = user.get_verification_token()
     verify_url = url_for('auth.verify_email', token=token, _external=True)
 
-    subject = _('WodSniper: Verify Your Email')
-    html_body = f"""
+    # Use user's preferred language
+    user_locale = getattr(user, 'language', 'es') or 'es'
+
+    with force_locale(user_locale):
+        subject = _('WodSniper: Verify Your Email')
+        html_body = f"""
     <!DOCTYPE html>
     <html>
     <head>

@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import render_template, redirect, url_for, flash, request, current_app, abort
+from flask import render_template, redirect, url_for, flash, request, current_app, abort, session
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_babel import gettext as _
 
@@ -51,6 +51,7 @@ def register():
         user = User(email=form.email.data.lower())
         user.set_password(form.password.data)
         user.email_verified = False
+        user.language = session.get('language', 'es')
 
         db.session.add(user)
         db.session.commit()
