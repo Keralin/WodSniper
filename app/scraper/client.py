@@ -935,6 +935,123 @@ class WodBusterClient:
         return None
 
     @classmethod
+    def _detect_box_url_with_flaresolverr(cls, email: str, password: str, flaresolverr_url: str) -> str:
+        """Detect box URL using FlareSolverr for Cloudflare bypass."""
+        from urllib.parse import urlencode
+
+        logger.info(f'Using FlareSolverr to detect box URL for {email}')
+        flaresolverr = FlareSolverrClient(flaresolverr_url)
+        login_url = f'{cls.BASE_URL}/account/login.aspx'
+
+        # Phase 1: Get login page
+        result = flaresolverr.solve(login_url)
+        if not result.get('success'):
+            raise LoginError(f'FlareSolverr failed to get login page: {result.get("error")}')
+
+        html = result.get('response', '')
+        cookies = result.get('cookies', [])
+
+        # Extract form tokens
+        soup = BeautifulSoup(html, 'lxml')
+        tokens = {}
+        for inp in soup.find_all('input', attrs={'type': 'hidden'}):
+            name = inp.get('name')
+            if name:
+                tokens[name] = inp.get('value', '')
+
+        if not tokens.get('__VIEWSTATEC') and not tokens.get('__VIEWSTATE'):
+            raise LoginError('Could not extract form tokens from login page')
+
+        # Phase 2: Submit credentials
+        login_data = {
+            '__VIEWSTATE': tokens.get('__VIEWSTATE', ''),
+            '__VIEWSTATEC': tokens.get('__VIEWSTATEC', ''),
+            '__EVENTVALIDATION': tokens.get('__EVENTVALIDATION', ''),
+            '__EVENTTARGET': '',
+            '__EVENTARGUMENT': '',
+            'CSRFToken': tokens.get('CSRFToken', ''),
+            'ctl00$ctl00$body$body$CtlLogin$IoEmail': email,
+            'ctl00$ctl00$body$body$CtlLogin$IoPassword': password,
+            'ctl00$ctl00$body$body$CtlLogin$CtlAceptar': 'Aceptar',
+        }
+
+        for key, value in tokens.items():
+            if key.startswith('ctl00$') and key not in login_data:
+                login_data[key] = value
+
+        post_data = urlencode(login_data)
+        result = flaresolverr.solve(login_url, method='POST', post_data=post_data, cookies=cookies)
+
+        if not result.get('success'):
+            raise LoginError(f'FlareSolverr login failed: {result.get("error")}')
+
+        html = result.get('response', '')
+        cookies = result.get('cookies', [])
+        current_url = result.get('url', login_url)
+
+        # Check for login errors
+        if 'usuario o contraseña incorrectos' in html.lower() or 'email o contraseña incorrectos' in html.lower():
+            raise LoginError('Invalid email or password')
+
+        # Phase 3: Handle device confirmation if needed
+        if 'recordar este dispositivo' in html.lower() or 'ctlseguro' in html.lower():
+            logger.info('Device confirmation required (FlareSolverr)')
+            soup = BeautifulSoup(html, 'lxml')
+            tokens = {}
+            for inp in soup.find_all('input', attrs={'type': 'hidden'}):
+                name = inp.get('name')
+                if name:
+                    tokens[name] = inp.get('value', '')
+
+            confirm_data = {
+                '__VIEWSTATE': tokens.get('__VIEWSTATE', ''),
+                '__VIEWSTATEC': tokens.get('__VIEWSTATEC', ''),
+                '__EVENTVALIDATION': tokens.get('__EVENTVALIDATION', ''),
+                '__EVENTTARGET': '',
+                '__EVENTARGUMENT': '',
+                'CSRFToken': tokens.get('CSRFToken', ''),
+            }
+
+            secure_btn = soup.find('input', {'id': re.compile(r'CtlSeguro', re.I)})
+            if secure_btn:
+                btn_name = secure_btn.get('name', '')
+                if btn_name:
+                    confirm_data[btn_name] = secure_btn.get('value', 'Aceptar')
+
+            for key, value in tokens.items():
+                if key.startswith('ctl00$') and key not in confirm_data:
+                    confirm_data[key] = value
+
+            post_data = urlencode(confirm_data)
+            result = flaresolverr.solve(current_url, method='POST', post_data=post_data, cookies=cookies)
+            if result.get('success'):
+                cookies = result.get('cookies', [])
+
+        # Phase 4: Get box URL via roadtobox
+        # We need to make a request that follows redirects to find the box URL
+        road_to_box_url = f'{cls.BASE_URL}/account/roadtobox.aspx'
+        result = flaresolverr.solve(road_to_box_url, cookies=cookies)
+
+        if result.get('success'):
+            final_url = result.get('url', '')
+            # The final URL should be the box URL
+            if '/user' in final_url:
+                box_url = final_url[:final_url.index('/user')]
+                logger.info(f'Auto-detected box URL via FlareSolverr: {box_url}')
+                return box_url
+            elif '/athlete' in final_url:
+                box_url = final_url[:final_url.index('/athlete')]
+                logger.info(f'Auto-detected box URL via FlareSolverr: {box_url}')
+                return box_url
+            elif 'wodbuster.com' in final_url and final_url != road_to_box_url:
+                parsed = urlparse(final_url)
+                box_url = f'{parsed.scheme}://{parsed.netloc}'
+                logger.info(f'Auto-detected box URL via FlareSolverr: {box_url}')
+                return box_url
+
+        raise LoginError('Could not auto-detect box URL via FlareSolverr')
+
+    @classmethod
     def detect_box_url(cls, email: str, password: str, flaresolverr_url: str = None) -> str:
         """
         Detect the box URL by logging in and following the redirect.
@@ -954,8 +1071,16 @@ class WodBusterClient:
             LoginError: If login fails or user has multiple boxes
         """
         import os
+        from urllib.parse import urlencode
 
         flaresolverr_url = flaresolverr_url or os.environ.get('FLARESOLVERR_URL')
+
+        # Try FlareSolverr first if available
+        if flaresolverr_url:
+            try:
+                return cls._detect_box_url_with_flaresolverr(email, password, flaresolverr_url)
+            except Exception as e:
+                logger.warning(f'FlareSolverr detect_box_url failed, falling back to cloudscraper: {e}')
 
         # Create a temporary session for login
         scraper = cloudscraper.create_scraper(
