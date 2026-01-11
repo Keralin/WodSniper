@@ -695,3 +695,13 @@ msgstr "Automatic class booking for CrossFit, Hyrox and functional fitness. Neve
 
 msgid "Automatic class booking for CrossFit, Hyrox and functional fitness."
 msgstr "Automatic class booking for CrossFit, Hyrox and functional fitness."
+
+# Resend verification
+msgid "Didn't receive the verification email?"
+msgstr "Didn't receive the verification email?"
+
+msgid "Enter your email"
+msgstr "Enter your email"
+
+msgid "Resend"
+msgstr "Resend"
