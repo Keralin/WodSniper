@@ -7,17 +7,48 @@ import logging
 from app import create_app
 from app.scheduler import shutdown_scheduler
 
-# Configure logging to stdout (Railway treats stderr as errors)
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    stream=sys.stdout
-)
-# Reduce noise from external libraries only
-logging.getLogger('urllib3').setLevel(logging.WARNING)
-logging.getLogger('cloudscraper').setLevel(logging.WARNING)
-logging.getLogger('werkzeug').setLevel(logging.INFO)
-logging.getLogger('apscheduler').setLevel(logging.WARNING)
+
+class StdoutFilter(logging.Filter):
+    """Filter to only allow logs below ERROR level."""
+    def filter(self, record):
+        return record.levelno < logging.ERROR
+
+
+def configure_logging():
+    """Configure logging with stdout for info and stderr for errors.
+
+    This setup is container-friendly:
+    - stdout: DEBUG, INFO, WARNING (normal operation)
+    - stderr: ERROR, CRITICAL (errors and failures)
+    """
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+
+    log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    formatter = logging.Formatter(log_format)
+
+    # Handler for stdout (DEBUG, INFO, WARNING)
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setLevel(logging.DEBUG)
+    stdout_handler.addFilter(StdoutFilter())
+    stdout_handler.setFormatter(formatter)
+
+    # Handler for stderr (ERROR, CRITICAL)
+    stderr_handler = logging.StreamHandler(sys.stderr)
+    stderr_handler.setLevel(logging.ERROR)
+    stderr_handler.setFormatter(formatter)
+
+    root_logger.addHandler(stdout_handler)
+    root_logger.addHandler(stderr_handler)
+
+    # Reduce noise from external libraries
+    logging.getLogger('urllib3').setLevel(logging.WARNING)
+    logging.getLogger('cloudscraper').setLevel(logging.WARNING)
+    logging.getLogger('werkzeug').setLevel(logging.INFO)
+    logging.getLogger('apscheduler').setLevel(logging.WARNING)
+
+
+configure_logging()
 
 app = create_app()
 
