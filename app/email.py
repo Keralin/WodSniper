@@ -81,7 +81,7 @@ def send_booking_summary(user, results: List[Dict[str, Any]]):
     # Build email subject and body in user's language
     total = len(results)
     success_count = len(successful)
-    user_locale = getattr(user, 'language', 'es') or 'es'
+    user_locale = getattr(user, 'language', 'en') or 'en'
 
     with force_locale(user_locale):
         if success_count == total:
@@ -236,7 +236,7 @@ def send_password_reset_email(user):
     reset_url = url_for('auth.reset_password', token=token, _external=True)
 
     # Use user's preferred language
-    user_locale = getattr(user, 'language', 'es') or 'es'
+    user_locale = getattr(user, 'language', 'en') or 'en'
 
     with force_locale(user_locale):
         subject = _('WodSniper: Reset Your Password')
@@ -306,7 +306,7 @@ def send_verification_email(user):
     verify_url = url_for('auth.verify_email', token=token, _external=True)
 
     # Use user's preferred language
-    user_locale = getattr(user, 'language', 'es') or 'es'
+    user_locale = getattr(user, 'language', 'en') or 'en'
 
     with force_locale(user_locale):
         subject = _('WodSniper: Verify Your Email')

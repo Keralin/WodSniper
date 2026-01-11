@@ -122,7 +122,7 @@ class User(UserMixin, db.Model):
     email_notifications = db.Column(db.Boolean, default=True)
 
     # Language preference (es, en)
-    language = db.Column(db.String(5), default='es')
+    language = db.Column(db.String(5), default='en')
 
     # Email verification
     email_verified = db.Column(db.Boolean, default=False)
