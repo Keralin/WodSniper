@@ -588,4 +588,8 @@ def set_language(language):
     from flask import current_app
     if language in current_app.config.get('LANGUAGES', ['es', 'en']):
         session['language'] = language
+        # Save to database if user is logged in
+        if current_user.is_authenticated:
+            current_user.language = language
+            db.session.commit()
     return redirect(request.referrer or url_for('booking.index'))
