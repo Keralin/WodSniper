@@ -40,6 +40,16 @@
                     <span class="info-value">{{ user.last_login.strftime('%d/%m/%Y %H:%M') if user.last_login else 'Never' }}</span>
                 </div>
                 <div class="info-item">
+                    <span class="info-label">Email Verified</span>
+                    <span class="info-value">
+                        {% if user.email_verified %}
+                            <span class="status-badge status-success">Verified</span>
+                        {% else %}
+                            <span class="status-badge status-failed">Not Verified</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="info-item">
                     <span class="info-label">Email Notifications</span>
                     <span class="info-value">{{ 'Enabled' if user.email_notifications else 'Disabled' }}</span>
                 </div>
@@ -50,6 +60,13 @@
             </div>
 
             <div class="admin-actions">
+                {% if not user.email_verified %}
+                <form method="POST" action="{{ url_for('admin.verify_user_email', user_id=user.id) }}" class="inline-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-primary">Verify Email</button>
+                </form>
+                {% endif %}
+
                 <form method="POST" action="{{ url_for('admin.reset_user_password', user_id=user.id) }}" class="inline-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-outline">Send Password Reset</button>

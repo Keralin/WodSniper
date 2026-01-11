@@ -86,6 +86,22 @@ def user_detail(user_id):
                            recent_logs=recent_logs)
 
 
+@admin_bp.route('/users/<int:user_id>/verify-email', methods=['POST'])
+@admin_required
+def verify_user_email(user_id):
+    """Manually verify a user's email."""
+    user = User.query.get_or_404(user_id)
+
+    if user.email_verified:
+        flash(f'{user.email} is already verified', 'info')
+    else:
+        user.email_verified = True
+        db.session.commit()
+        flash(f'{user.email} has been verified', 'success')
+
+    return redirect(url_for('admin.user_detail', user_id=user_id))
+
+
 @admin_bp.route('/users/<int:user_id>/reset-password', methods=['POST'])
 @admin_required
 def reset_user_password(user_id):

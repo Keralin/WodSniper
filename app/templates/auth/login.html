@@ -40,6 +40,15 @@
             </p>
         </form>
 
+        <div class="resend-verification">
+            <p class="text-muted">{{ _("Didn't receive the verification email?") }}</p>
+            <form method="POST" action="{{ url_for('auth.resend_verification') }}" class="resend-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="email" name="email" placeholder="{{ _('Enter your email') }}" class="form-control" required>
+                <button type="submit" class="btn btn-outline btn-sm">{{ _('Resend') }}</button>
+            </form>
+        </div>
+
         <p class="auth-footer">
             {{ _("Don't have an account?") }} <a href="{{ url_for('auth.register') }}">{{ _('Sign Up') }}</a>
         </p>

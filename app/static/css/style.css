@@ -721,6 +721,35 @@ p {
     color: var(--primary);
 }
 
+.resend-verification {
+    margin-top: var(--space-lg);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--gray-200);
+    text-align: center;
+}
+
+.resend-verification .text-muted {
+    font-size: 0.85rem;
+    margin-bottom: var(--space-sm);
+}
+
+.resend-form {
+    display: flex;
+    gap: var(--space-sm);
+    justify-content: center;
+    align-items: center;
+}
+
+.resend-form .form-control {
+    max-width: 200px;
+    font-size: 0.9rem;
+}
+
+.resend-form .btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+}
+
 /* ==================== */
 /* Forms                */
 /* ==================== */
